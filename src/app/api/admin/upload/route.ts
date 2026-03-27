@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+export const runtime = "nodejs";
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function sanitizeFilename(name: string) {

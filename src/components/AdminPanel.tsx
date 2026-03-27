@@ -38,6 +38,14 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
   const [uploading, setUploading] = useState("");
 
   const editing = useMemo(() => products.find((product) => product.id === form.id), [form.id, products]);
+  const categoryOptions = useMemo(
+    () => {
+      const existing = products.map((product) => product.category).filter(Boolean);
+      const defaults = ["Tops", "Bottoms", "Outerwear", "Accessories"];
+      return Array.from(new Set([...defaults, ...existing]));
+    },
+    [products],
+  );
   const productImages = useMemo(
     () => form.images.split("\n").map((item) => item.trim()).filter(Boolean),
     [form.images],
@@ -119,12 +127,18 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
       credentials: "include",
     });
 
+    const data = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      setUploading("Upload failed.");
+      setUploading(data.message ? `Upload failed: ${data.message}` : "Upload failed.");
       return null;
     }
 
-    const data = await response.json();
+    if (!data.url) {
+      setUploading("Upload failed: missing URL.");
+      return null;
+    }
+
     setUploading("Upload complete.");
     return data.url as string;
   }
@@ -223,7 +237,16 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
           <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmitProduct}>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Product name" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
             <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Price in IDR" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
-            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
+            <select
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              required
+            >
+              {categoryOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
             <input value={form.shopeeUrl} onChange={(e) => setForm({ ...form, shopeeUrl: e.target.value })} placeholder="marketplace URL" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="min-h-28 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground md:col-span-2" required />
 
