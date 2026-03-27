@@ -2,7 +2,7 @@ import slugify from "slugify";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const productSchema = z.object({
   name: z.string().min(2),
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: products, error } = await supabase
+  const { data: products, error } = await supabaseAdmin
     .from("products")
     .select("*")
     .order("created_at", { ascending: false });
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   const slugBase = slugify(parsed.data.name, { lower: true, strict: true });
   const slug = `${slugBase}-${Date.now().toString().slice(-4)}`;
 
-  const { data: product, error } = await supabase
+  const { data: product, error } = await supabaseAdmin
     .from("products")
     .insert([
       {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         price: parsed.data.price,
         description: parsed.data.description,
         images: parsed.data.images,
-        shopee_url: parsed.data.shopeeUrl,
+        shopeeUrl: parsed.data.shopeeUrl,
         category: parsed.data.category ?? "Tops",
       },
     ])

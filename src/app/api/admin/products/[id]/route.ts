@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const productSchema = z.object({
   name: z.string().min(2),
@@ -32,14 +32,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ message: "Invalid payload", errors: parsed.error.issues }, { status: 400 });
   }
 
-  const { data: product, error } = await supabase
+  const { data: product, error } = await supabaseAdmin
     .from("products")
     .update({
       name: parsed.data.name,
       price: parsed.data.price,
       description: parsed.data.description,
       images: parsed.data.images,
-      shopee_url: parsed.data.shopeeUrl,
+      shopeeUrl: parsed.data.shopeeUrl,
       category: parsed.data.category ?? "Tops",
     })
     .eq("id", id)
@@ -59,7 +59,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const { error } = await supabase.from("products").delete().eq("id", id);
+  const { error } = await supabaseAdmin.from("products").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ message: "Failed to delete product", error: error.message }, { status: 500 });

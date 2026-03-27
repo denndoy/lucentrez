@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -12,7 +12,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const { error } = await supabase.from("gallery_images").delete().eq("id", id);
+  const { error } = await supabaseAdmin.from("gallery_images").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ message: "Failed to delete gallery item", error: error.message }, { status: 500 });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const gallerySchema = z.object({
   title: z.string().min(2),
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: gallery, error } = await supabase
+  const { data: gallery, error } = await supabaseAdmin
     .from("gallery_images")
     .select("*")
     .order("created_at", { ascending: false });
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Invalid payload", errors: parsed.error.issues }, { status: 400 });
   }
 
-  const { data: image, error } = await supabase
+  const { data: image, error } = await supabaseAdmin
     .from("gallery_images")
     .insert([{ title: parsed.data.title, image_url: parsed.data.imageUrl }])
     .select()
