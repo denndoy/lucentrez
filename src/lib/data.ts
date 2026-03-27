@@ -10,7 +10,8 @@ function toProductView(product: {
   price: number;
   description: string;
   images: unknown;
-  shopeeUrl: string;
+  shopeeurl?: string;
+  shopeeUrl?: string;
   category: string;
   created_at: string;
 }): ProductView {
@@ -23,7 +24,7 @@ function toProductView(product: {
     images: Array.isArray(product.images)
       ? product.images.filter((item): item is string => typeof item === "string")
       : [],
-    shopeeUrl: product.shopeeUrl,
+    shopeeUrl: product.shopeeurl ?? product.shopeeUrl ?? "https://shopee.co.id/",
     category: product.category,
     createdAt: new Date(product.created_at),
   };

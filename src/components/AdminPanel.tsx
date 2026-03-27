@@ -84,6 +84,17 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
   async function onSubmitProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!form.name || !form.price || !form.description) {
+      setStatus("Please fill all required fields.");
+      return;
+    }
+
+    const images = form.images.split("\n").map((item) => item.trim()).filter(Boolean);
+    if (images.length === 0) {
+      setStatus("Please add at least one image.");
+      return;
+    }
+
     setStatus("Saving product...");
 
     const payload = {
@@ -91,7 +102,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
       price: Number(form.price),
       category: form.category,
       description: form.description,
-      images: form.images.split("\n").map((item) => item.trim()).filter(Boolean),
+      images,
       shopeeUrl: form.shopeeUrl,
     };
 
@@ -105,8 +116,9 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
       credentials: "include",
     });
 
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setStatus("Failed to save product.");
+      setStatus(data.message ? `Failed to save product: ${data.message}` : "Failed to save product.");
       return;
     }
 
@@ -236,7 +248,15 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
           <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmitProduct}>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Product name" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
-            <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Price in IDR" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
+            <input
+              value={form.price}
+              onChange={(e) => setForm({ ...form, price: e.target.value })}
+              placeholder="Price in IDR"
+              type="number"
+              min={0}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              required
+            />
             <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -247,18 +267,31 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
-            <input value={form.shopeeUrl} onChange={(e) => setForm({ ...form, shopeeUrl: e.target.value })} placeholder="marketplace URL" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
+            <input
+              value={form.shopeeUrl}
+              onChange={(e) => setForm({ ...form, shopeeUrl: e.target.value })}
+              placeholder="marketplace URL"
+              type="url"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              required
+            />
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="min-h-28 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground md:col-span-2" required />
 
             <div className="md:col-span-2">
               <label className="mb-2 block text-xs uppercase tracking-[0.15em] text-muted">Images</label>
               <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)}
-                  className="text-xs text-muted"
-                />
+                <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+                  Choose Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)}
+                    className="hidden"
+                  />
+                </label>
+                <span className="max-w-[220px] truncate text-xs text-muted">
+                  {productImageFile ? productImageFile.name : "No file selected"}
+                </span>
                 <button
                   type="button"
                   className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
@@ -382,12 +415,18 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
           <input value={galleryForm.title} onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })} placeholder="Gallery title" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
           <input value={galleryForm.imageUrl} onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })} placeholder="Image URL" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
           <div className="flex flex-wrap items-center gap-2 md:col-span-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => setGalleryImageFile(event.target.files?.[0] ?? null)}
-              className="text-xs text-muted"
-            />
+            <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+              Choose Image
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => setGalleryImageFile(event.target.files?.[0] ?? null)}
+                className="hidden"
+              />
+            </label>
+            <span className="max-w-[220px] truncate text-xs text-muted">
+              {galleryImageFile ? galleryImageFile.name : "No file selected"}
+            </span>
             <button
               className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
               type="button"

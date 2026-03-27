@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     products: (products || []).map((product) => ({
       ...product,
       images: Array.isArray(product.images) ? product.images : [],
+      shopeeUrl: product.shopeeurl,
     })),
   });
 }
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
         price: parsed.data.price,
         description: parsed.data.description,
         images: parsed.data.images,
-        shopeeUrl: parsed.data.shopeeUrl,
+        shopeeurl: parsed.data.shopeeUrl,
         category: parsed.data.category ?? "Tops",
       },
     ])

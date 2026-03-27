@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       price: parsed.data.price,
       description: parsed.data.description,
       images: parsed.data.images,
-      shopeeUrl: parsed.data.shopeeUrl,
+      shopeeurl: parsed.data.shopeeUrl,
       category: parsed.data.category ?? "Tops",
     })
     .eq("id", id)
