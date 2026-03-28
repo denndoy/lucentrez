@@ -20,12 +20,12 @@ export function ProductCard({ product }: ProductCardProps) {
       className="group overflow-hidden bg-transparent"
     >
       <Link href={`/catalog/${product.slug}`}>
-        <div className="relative aspect-[4/5] overflow-hidden">
+        <div className="relative h-[320px] w-full overflow-hidden bg-zinc-100 sm:h-[360px] lg:h-[420px]">
           <Image
             src={product.images[0] ?? "/products/placeholder.svg"}
             alt={product.name}
             fill
-            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${soldOut ? "scale-[1.01] blur-[0.8px] saturate-75 brightness-90 opacity-60" : "opacity-100"}`}
+            className={`object-cover object-center transition-transform duration-500 group-hover:scale-105 ${soldOut ? "scale-[1.01] blur-[0.8px] saturate-75 brightness-90 opacity-60" : "opacity-100"}`}
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
           />
           {soldOut ? (

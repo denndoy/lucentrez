@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -35,30 +36,38 @@ export function Navbar() {
               </svg>
             </button>
 
-            {langOpen ? (
-              <div className="absolute right-0 top-11 z-50 w-36 rounded-xl border border-border bg-card p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)]">
-                <button
-                  type="button"
-                  className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "ID" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                  onClick={() => {
-                    setLang("ID");
-                    setLangOpen(false);
-                  }}
+            <AnimatePresence>
+              {langOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  className="absolute right-0 top-11 z-50 w-36 rounded-xl border border-border bg-card p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)]"
                 >
-                  Indonesia
-                </button>
-                <button
-                  type="button"
-                  className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "EN" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                  onClick={() => {
-                    setLang("EN");
-                    setLangOpen(false);
-                  }}
-                >
-                  English
-                </button>
-              </div>
-            ) : null}
+                  <button
+                    type="button"
+                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "ID" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => {
+                      setLang("ID");
+                      setLangOpen(false);
+                    }}
+                  >
+                    Indonesia
+                  </button>
+                  <button
+                    type="button"
+                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "EN" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => {
+                      setLang("EN");
+                      setLangOpen(false);
+                    }}
+                  >
+                    English
+                  </button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
 
             <button
               className="rounded-lg border border-border px-3 py-2 text-xs uppercase tracking-widest text-foreground"
@@ -103,51 +112,67 @@ export function Navbar() {
               </svg>
             </button>
 
-            {langOpen ? (
-              <div className="absolute right-0 top-11 z-50 w-40 rounded-xl border border-border bg-card p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)]">
-                <button
-                  type="button"
-                  className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "ID" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                  onClick={() => {
-                    setLang("ID");
-                    setLangOpen(false);
-                  }}
+            <AnimatePresence>
+              {langOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  className="absolute right-0 top-11 z-50 w-40 rounded-xl border border-border bg-card p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)]"
                 >
-                  Indonesia
-                </button>
-                <button
-                  type="button"
-                  className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "EN" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                  onClick={() => {
-                    setLang("EN");
-                    setLangOpen(false);
-                  }}
-                >
-                  English
-                </button>
-              </div>
-            ) : null}
+                  <button
+                    type="button"
+                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "ID" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => {
+                      setLang("ID");
+                      setLangOpen(false);
+                    }}
+                  >
+                    Indonesia
+                  </button>
+                  <button
+                    type="button"
+                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "EN" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => {
+                      setLang("EN");
+                      setLangOpen(false);
+                    }}
+                  >
+                    English
+                  </button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
         </div>
       </nav>
 
-      {open ? (
-        <div className="border-t border-border bg-card px-2 pb-5 pt-3 md:hidden">
-          <ul className="flex flex-col gap-2">
-            {links.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="block rounded-lg px-3 py-2 text-sm uppercase tracking-widest text-muted hover:text-foreground"
-                  onClick={() => setOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="border-t border-border bg-card px-2 pb-5 pt-3 md:hidden"
+          >
+            <ul className="flex flex-col gap-2">
+              {links.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="block rounded-lg px-3 py-2 text-sm uppercase tracking-widest text-muted hover:text-foreground"
+                    onClick={() => setOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </header>
   );
 }

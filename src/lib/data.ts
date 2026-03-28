@@ -92,7 +92,7 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
 
     if (error) throw error;
     if (!gallery || gallery.length === 0) {
-      return fallbackGallery;
+      return [];
     }
     return gallery.map((item) => ({
       id: item.id,

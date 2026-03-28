@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ProductView } from "@/lib/types";
 
 type GalleryItem = {
@@ -13,6 +13,17 @@ type GalleryItem = {
 type AdminPanelProps = {
   initialProducts: ProductView[];
   initialGallery: GalleryItem[];
+};
+
+type ToastState = {
+  type: "success" | "error" | "info";
+  message: string;
+};
+
+type DeleteTarget = {
+  type: "product" | "gallery";
+  id: string;
+  label: string;
 };
 
 const emptyProduct = {
@@ -31,12 +42,23 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
   const [gallery, setGallery] = useState(initialGallery);
   const [form, setForm] = useState(emptyProduct);
   const [galleryForm, setGalleryForm] = useState({ title: "", imageUrl: "" });
-  const [status, setStatus] = useState("");
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [gallerySearch, setGallerySearch] = useState("");
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState("");
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2600);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  function showToast(type: ToastState["type"], message: string) {
+    setToast({ type, message });
+  }
 
   const editing = useMemo(() => products.find((product) => product.id === form.id), [form.id, products]);
   const categoryOptions = useMemo(
@@ -79,24 +101,28 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
     if (galleryRes.ok) {
       const data = await galleryRes.json();
-      setGallery(data.gallery);
+      setGallery(
+        (data.gallery ?? []).map((item: { id: string; title: string; imageUrl?: string; image_url?: string }) => ({
+          id: item.id,
+          title: item.title,
+          imageUrl: item.imageUrl ?? item.image_url ?? "",
+        })),
+      );
     }
   }
 
   async function onSubmitProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form.name || !form.price || !form.description) {
-      setStatus("Please fill all required fields.");
+      showToast("error", "Please fill all required fields.");
       return;
     }
 
     const images = form.images.split("\n").map((item) => item.trim()).filter(Boolean);
     if (images.length === 0) {
-      setStatus("Please add at least one image.");
+      showToast("error", "Please add at least one image.");
       return;
     }
-
-    setStatus("Saving product...");
 
     const payload = {
       name: form.name,
@@ -120,11 +146,11 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setStatus(data.message ? `Failed to save product: ${data.message}` : "Failed to save product.");
+      showToast("error", data.message ? `Failed to save product: ${data.message}` : "Failed to save product.");
       return;
     }
 
-    setStatus(form.id ? "Product updated." : "Product created.");
+    showToast("success", form.id ? "Product updated." : "Product created.");
     setForm(emptyProduct);
     await refresh();
   }
@@ -188,24 +214,22 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
   }
 
   async function onDeleteProduct(id: string) {
-    setStatus("Deleting product...");
     const response = await fetch(`/api/admin/products/${id}`, {
       method: "DELETE",
       credentials: "include",
     });
 
     if (!response.ok) {
-      setStatus("Failed to delete product.");
+      showToast("error", "Failed to delete product.");
       return;
     }
 
-    setStatus("Product deleted.");
+    showToast("success", "Product deleted.");
     await refresh();
   }
 
   async function onSubmitGallery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Saving gallery image...");
 
     const response = await fetch("/api/admin/gallery", {
       method: "POST",
@@ -215,30 +239,42 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
     });
 
     if (!response.ok) {
-      setStatus("Failed to save gallery image.");
+      const data = await response.json().catch(() => ({}));
+      showToast("error", data.message ? `Failed to save gallery image: ${data.message}` : "Failed to save gallery image.");
       return;
     }
 
-    setStatus("Gallery image added.");
+    showToast("success", "Gallery image added.");
     setGalleryForm({ title: "", imageUrl: "" });
     await refresh();
   }
 
   async function onDeleteGallery(id: string) {
-    setStatus("Deleting gallery image...");
-
     const response = await fetch(`/api/admin/gallery/${id}`, {
       method: "DELETE",
       credentials: "include",
     });
 
     if (!response.ok) {
-      setStatus("Failed to delete gallery image.");
+      const data = await response.json().catch(() => ({}));
+      showToast("error", data.message ? `Failed to delete gallery image: ${data.message}` : "Failed to delete gallery image.");
       return;
     }
 
-    setStatus("Gallery image deleted.");
+    showToast("success", "Gallery image deleted.");
     await refresh();
+  }
+
+  async function onConfirmDelete() {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === "product") {
+      await onDeleteProduct(deleteTarget.id);
+    } else {
+      await onDeleteGallery(deleteTarget.id);
+    }
+
+    setDeleteTarget(null);
   }
 
   return (
@@ -405,7 +441,13 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                   <button
                     type="button"
                     className="rounded-full border border-red-400/60 px-3 py-1 text-xs uppercase tracking-widest text-red-300"
-                    onClick={() => onDeleteProduct(product.id)}
+                    onClick={() =>
+                      setDeleteTarget({
+                        type: "product",
+                        id: product.id,
+                        label: product.name,
+                      })
+                    }
                   >
                     Delete
                   </button>
@@ -418,7 +460,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_24px_rgba(0,0,0,0.1)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-3xl uppercase text-foreground">Gallery CMS</h2>
+          <h2 className="font-display text-3xl uppercase text-foreground">Community CMS</h2>
           <input
             value={gallerySearch}
             onChange={(e) => setGallerySearch(e.target.value)}
@@ -476,7 +518,13 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
               <button
                 type="button"
                 className="rounded-full border border-red-400/60 px-3 py-1 text-xs uppercase tracking-widest text-red-300"
-                onClick={() => onDeleteGallery(item.id)}
+                onClick={() =>
+                  setDeleteTarget({
+                    type: "gallery",
+                    id: item.id,
+                    label: item.title,
+                  })
+                }
               >
                 Delete
               </button>
@@ -485,7 +533,45 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
         </div>
       </div>
 
-      <p className="text-sm text-foreground">{status}</p>
+      {toast ? (
+        <div
+          className={`fixed right-4 top-4 z-[60] max-w-sm rounded-lg border px-4 py-3 text-sm shadow-[0_12px_28px_rgba(0,0,0,0.18)] ${toast.type === "success" ? "border-emerald-700/35 bg-emerald-100 text-emerald-900" : toast.type === "error" ? "border-red-700/35 bg-red-100 text-red-900" : "border-border bg-card text-foreground"}`}
+          role="status"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div className="fixed inset-0 z-[70] bg-black/50" onClick={() => setDeleteTarget(null)}>
+          <div
+            className="mx-auto mt-[16vh] w-[92%] max-w-md rounded-xl border border-border bg-card p-5 shadow-[0_20px_48px_rgba(0,0,0,0.4)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-xs uppercase tracking-[0.14em] text-muted">Confirm Delete</p>
+            <p className="mt-2 text-sm text-foreground">
+              Delete {deleteTarget.type === "product" ? "product" : "gallery image"} <strong>{deleteTarget.label}</strong>?
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-red-700/40 bg-red-100 px-4 py-2 text-xs uppercase tracking-[0.14em] text-red-900"
+                onClick={onConfirmDelete}
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

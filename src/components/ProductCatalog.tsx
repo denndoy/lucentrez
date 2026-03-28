@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { CatalogGridItem, ProductGrid } from "@/components/ProductGrid";
 import { ProductView } from "@/lib/types";
@@ -25,6 +26,7 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
   const [priceRange, setPriceRange] = useState("all");
   const [size, setSize] = useState<"all" | "S" | "M" | "L" | "XL">("all");
   const [sortBy, setSortBy] = useState<SortOption>("featured");
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const catalogProducts = useMemo<CatalogGridItem[]>(() => {
     const sizeOptions: Array<"S" | "M" | "L" | "XL"> = ["S", "M", "L", "XL"];
@@ -80,123 +82,184 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
     });
   }, [filtered, sortBy]);
 
-  return (
-    <section className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="h-fit border border-border bg-card/70">
-        <div className="border-b border-border p-4">
-          <label className="block text-sm text-foreground">
-            <span className="sr-only">Search product</span>
+  const filterContent = (
+    <>
+      <div className="border-b border-border p-4">
+        <label className="block text-sm text-foreground">
+          <span className="sr-only">Search product</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search"
+            className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted"
+          />
+        </label>
+      </div>
+
+      <div className="border-b border-border p-4">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Product Type</p>
+        <div className="space-y-2">
+          {categories.map((item) => (
+            <label key={item} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input
+                type="radio"
+                name="category"
+                checked={category === item}
+                onChange={() => setCategory(item)}
+                className="h-4 w-4 accent-black"
+              />
+              {item}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="border-b border-border p-4">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Availability</p>
+        <div className="space-y-2">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
             <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search"
-              className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted"
+              type="radio"
+              name="availability"
+              checked={availability === "all"}
+              onChange={() => setAvailability("all")}
+              className="h-4 w-4 accent-black"
             />
+            All
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+            <input
+              type="radio"
+              name="availability"
+              checked={availability === "in-stock"}
+              onChange={() => setAvailability("in-stock")}
+              className="h-4 w-4 accent-black"
+            />
+            In Stock
           </label>
         </div>
+      </div>
 
-        <div className="border-b border-border p-4">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Product Type</p>
-          <div className="space-y-2">
-            {categories.map((item) => (
-              <label key={item} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                <input
-                  type="radio"
-                  name="category"
-                  checked={category === item}
-                  onChange={() => setCategory(item)}
-                  className="h-4 w-4 accent-black"
-                />
-                {item}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="border-b border-border p-4">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Availability</p>
-          <div className="space-y-2">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+      <div className="border-b border-border p-4">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Price</p>
+        <div className="space-y-2">
+          {priceRanges.map((range) => (
+            <label key={range.id} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
               <input
                 type="radio"
-                name="availability"
-                checked={availability === "all"}
-                onChange={() => setAvailability("all")}
+                name="price"
+                checked={priceRange === range.id}
+                onChange={() => setPriceRange(range.id)}
                 className="h-4 w-4 accent-black"
               />
-              All
+              {range.label}
             </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Size</p>
+        <div className="space-y-2">
+          {(["all", "S", "M", "L", "XL"] as const).map((item) => (
+            <label key={item} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
               <input
                 type="radio"
-                name="availability"
-                checked={availability === "in-stock"}
-                onChange={() => setAvailability("in-stock")}
+                name="size"
+                checked={size === item}
+                onChange={() => setSize(item)}
                 className="h-4 w-4 accent-black"
               />
-              In Stock
+              {item === "all" ? "All Size" : item}
             </label>
-          </div>
+          ))}
         </div>
+      </div>
+    </>
+  );
 
-        <div className="border-b border-border p-4">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Price</p>
-          <div className="space-y-2">
-            {priceRanges.map((range) => (
-              <label key={range.id} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                <input
-                  type="radio"
-                  name="price"
-                  checked={priceRange === range.id}
-                  onChange={() => setPriceRange(range.id)}
-                  className="h-4 w-4 accent-black"
-                />
-                {range.label}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-4">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Size</p>
-          <div className="space-y-2">
-            {(["all", "S", "M", "L", "XL"] as const).map((item) => (
-              <label key={item} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                <input
-                  type="radio"
-                  name="size"
-                  checked={size === item}
-                  onChange={() => setSize(item)}
-                  className="h-4 w-4 accent-black"
-                />
-                {item === "all" ? "All Size" : item}
-              </label>
-            ))}
-          </div>
-        </div>
+  return (
+    <section className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="hidden h-fit border border-border bg-card/70 lg:block">
+        {filterContent}
       </aside>
 
       <div>
         <div className="mb-5 flex items-center justify-between gap-4">
           <h2 className="font-display text-4xl uppercase leading-none text-foreground">All Products</h2>
-          <label className="text-sm text-foreground">
-            <span className="sr-only">Sort products</span>
-            <select
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as SortOption)}
-              className="border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileFilterOpen(true)}
+              className="border border-border bg-background px-3 py-2 text-sm text-foreground lg:hidden"
             >
-              <option value="featured">Sort: Featured</option>
-              <option value="newest">Sort: Newest</option>
-              <option value="price-low">Sort: Price Low</option>
-              <option value="price-high">Sort: Price High</option>
-            </select>
-          </label>
+              Filter
+            </button>
+
+            <label className="text-sm text-foreground">
+              <span className="sr-only">Sort products</span>
+              <select
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as SortOption)}
+                className="border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+              >
+                <option value="featured">Sort: Featured</option>
+                <option value="newest">Sort: Newest</option>
+                <option value="price-low">Sort: Price Low</option>
+                <option value="price-high">Sort: Price High</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <ProductGrid products={sorted} />
       </div>
+
+      <AnimatePresence>
+        {mobileFilterOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 z-50 bg-black/40 lg:hidden"
+            onClick={() => setMobileFilterOpen(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              className="absolute bottom-0 left-0 right-0 max-h-[88vh] overflow-y-auto border-t border-border bg-background"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">Filters</p>
+                <button
+                  type="button"
+                  onClick={() => setMobileFilterOpen(false)}
+                  className="text-xs uppercase tracking-[0.14em] text-muted"
+                >
+                  Close
+                </button>
+              </div>
+
+              {filterContent}
+
+              <div className="border-t border-border p-4">
+                <button
+                  type="button"
+                  onClick={() => setMobileFilterOpen(false)}
+                  className="w-full bg-foreground px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-background"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }

@@ -22,7 +22,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Failed to fetch gallery", error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ gallery });
+  return NextResponse.json({
+    gallery: (gallery || []).map((item) => ({
+      id: item.id,
+      title: item.title,
+      imageUrl: item.image_url,
+      createdAt: item.created_at,
+    })),
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -47,5 +54,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Failed to create gallery item", error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ image }, { status: 201 });
+  return NextResponse.json({
+    image: {
+      id: image.id,
+      title: image.title,
+      imageUrl: image.image_url,
+      createdAt: image.created_at,
+    },
+  }, { status: 201 });
 }
