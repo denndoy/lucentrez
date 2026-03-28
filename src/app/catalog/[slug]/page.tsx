@@ -1,8 +1,10 @@
 import { Metadata } from "next";
+import { cookies } from "next/headers";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/Button";
 import { formatRupiah, getAllProducts, getProductBySlug } from "@/lib/data";
+import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 
 type ProductDetailProps = {
   params: Promise<{ slug: string }>;
@@ -33,6 +35,8 @@ export async function generateMetadata({ params }: ProductDetailProps): Promise<
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailProps) {
+  const cookieStore = await cookies();
+  const lang = normalizeLang(cookieStore.get(LANG_COOKIE)?.value);
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
@@ -63,7 +67,9 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
           <p className="mt-4 text-3xl font-semibold text-foreground">{formatRupiah(product.price)}</p>
           <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted">{product.description}</p>
 
-          <p className="mt-6 text-xs uppercase tracking-[0.14em] text-muted">Available sizes: S / M / L / XL</p>
+          <p className="mt-6 text-xs uppercase tracking-[0.14em] text-muted">
+            {lang === "id" ? "Ukuran tersedia: S / M / L / XL" : "Available sizes: S / M / L / XL"}
+          </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
             <Button
@@ -73,7 +79,7 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
               rel="noopener noreferrer"
               className="!bg-black !text-white hover:!bg-zinc-800 border border-black/90"
             >
-              Buy on marketplace
+              {lang === "id" ? "Beli di marketplace" : "Buy on marketplace"}
             </Button>
             <Button
               as="link"
@@ -81,12 +87,14 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
               variant="ghost"
               className="!text-foreground hover:!bg-black hover:!text-white"
             >
-              Back to Catalog
+              {lang === "id" ? "Kembali ke Katalog" : "Back to Catalog"}
             </Button>
           </div>
 
           <p className="mt-4 text-xs uppercase tracking-[0.14em] text-muted">
-            Checkout and payment are completed on marketplace.
+            {lang === "id"
+              ? "Checkout dan pembayaran dilakukan di marketplace."
+              : "Checkout and payment are completed on marketplace."}
           </p>
         </section>
       </div>

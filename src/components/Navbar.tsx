@@ -1,19 +1,54 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { AppLang } from "@/lib/lang";
 
-const links = [
-  { href: "/catalog", label: "Catalog" },
-  { href: "/community", label: "Community" },
-  { href: "/contact", label: "Contact" },
-];
+type NavbarProps = {
+  initialLang: AppLang;
+};
 
-export function Navbar() {
+export function Navbar({ initialLang }: NavbarProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState<"ID" | "EN">("ID");
+  const [lang, setLang] = useState<AppLang>(initialLang);
   const [langOpen, setLangOpen] = useState(false);
+
+  useEffect(() => {
+    setLang(initialLang);
+  }, [initialLang]);
+
+  const links = useMemo(
+    () =>
+      lang === "id"
+        ? [
+            { href: "/catalog", label: "Katalog" },
+            { href: "/community", label: "Komunitas" },
+            { href: "/contact", label: "Kontak" },
+          ]
+        : [
+            { href: "/catalog", label: "Catalog" },
+            { href: "/community", label: "Community" },
+            { href: "/contact", label: "Contact" },
+          ],
+    [lang],
+  );
+
+  async function selectLanguage(nextLang: AppLang) {
+    setLang(nextLang);
+    setLangOpen(false);
+
+    await fetch("/api/lang", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lang: nextLang }),
+      credentials: "include",
+    });
+
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md">
@@ -47,21 +82,15 @@ export function Navbar() {
                 >
                   <button
                     type="button"
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "ID" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => {
-                      setLang("ID");
-                      setLangOpen(false);
-                    }}
+                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "id" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => selectLanguage("id")}
                   >
                     Indonesia
                   </button>
                   <button
                     type="button"
-                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "EN" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => {
-                      setLang("EN");
-                      setLangOpen(false);
-                    }}
+                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "en" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => selectLanguage("en")}
                   >
                     English
                   </button>
@@ -123,21 +152,15 @@ export function Navbar() {
                 >
                   <button
                     type="button"
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "ID" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => {
-                      setLang("ID");
-                      setLangOpen(false);
-                    }}
+                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "id" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => selectLanguage("id")}
                   >
                     Indonesia
                   </button>
                   <button
                     type="button"
-                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "EN" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => {
-                      setLang("EN");
-                      setLangOpen(false);
-                    }}
+                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "en" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
+                    onClick={() => selectLanguage("en")}
                   >
                     English
                   </button>

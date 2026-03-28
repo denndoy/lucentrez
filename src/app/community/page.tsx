@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Image from "next/image";
 import { getGalleryItems } from "@/lib/data";
+import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 
 export const metadata: Metadata = {
   title: "Community",
@@ -8,13 +10,17 @@ export const metadata: Metadata = {
 };
 
 export default async function CommunityPage() {
+  const cookieStore = await cookies();
+  const lang = normalizeLang(cookieStore.get(LANG_COOKIE)?.value);
   const items = await getGalleryItems();
 
   return (
     <section className="w-full px-4 py-5 md:px-10 md:py-8 lg:px-14">
       {items.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted">No community images yet.</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-muted">
+            {lang === "id" ? "Belum ada foto komunitas." : "No community images yet."}
+          </p>
         </div>
       ) : null}
 

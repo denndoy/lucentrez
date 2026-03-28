@@ -3,10 +3,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { CatalogGridItem, ProductGrid } from "@/components/ProductGrid";
+import type { AppLang } from "@/lib/lang";
 import { ProductView } from "@/lib/types";
 
 type ProductCatalogProps = {
   products: ProductView[];
+  lang: AppLang;
 };
 
 const priceRanges = [
@@ -19,7 +21,7 @@ const priceRanges = [
 
 type SortOption = "featured" | "newest" | "price-low" | "price-high";
 
-export function ProductCatalog({ products }: ProductCatalogProps) {
+export function ProductCatalog({ products, lang }: ProductCatalogProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Products");
   const [availability, setAvailability] = useState<"all" | "in-stock">("all");
@@ -91,14 +93,14 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search"
+            placeholder={lang === "id" ? "Cari" : "Search"}
             className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted"
           />
         </label>
       </div>
 
       <div className="border-b border-border p-4">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Product Type</p>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">{lang === "id" ? "Tipe Produk" : "Product Type"}</p>
         <div className="space-y-2">
           {categories.map((item) => (
             <label key={item} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
@@ -109,14 +111,14 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
                 onChange={() => setCategory(item)}
                 className="h-4 w-4 accent-black"
               />
-              {item}
+              {item === "All Products" ? (lang === "id" ? "Semua Produk" : "All Products") : item}
             </label>
           ))}
         </div>
       </div>
 
       <div className="border-b border-border p-4">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Availability</p>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">{lang === "id" ? "Ketersediaan" : "Availability"}</p>
         <div className="space-y-2">
           <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
             <input
@@ -126,7 +128,7 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
               onChange={() => setAvailability("all")}
               className="h-4 w-4 accent-black"
             />
-            All
+            {lang === "id" ? "Semua" : "All"}
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
             <input
@@ -136,13 +138,13 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
               onChange={() => setAvailability("in-stock")}
               className="h-4 w-4 accent-black"
             />
-            In Stock
+            {lang === "id" ? "Tersedia" : "In Stock"}
           </label>
         </div>
       </div>
 
       <div className="border-b border-border p-4">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Price</p>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">{lang === "id" ? "Harga" : "Price"}</p>
         <div className="space-y-2">
           {priceRanges.map((range) => (
             <label key={range.id} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
@@ -153,14 +155,24 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
                 onChange={() => setPriceRange(range.id)}
                 className="h-4 w-4 accent-black"
               />
-              {range.label}
+              {lang === "id"
+                ? range.id === "all"
+                  ? "Semua Harga"
+                  : range.id === "under-620"
+                    ? "Di bawah Rp 620.000"
+                    : range.id === "620-1200"
+                      ? "Rp 620.000 - Rp 1.200.000"
+                      : range.id === "1200-1800"
+                        ? "Rp 1.200.000 - Rp 1.800.000"
+                        : "Rp 1.800.000 +"
+                : range.label}
             </label>
           ))}
         </div>
       </div>
 
       <div className="p-4">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Size</p>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">{lang === "id" ? "Ukuran" : "Size"}</p>
         <div className="space-y-2">
           {(["all", "S", "M", "L", "XL"] as const).map((item) => (
             <label key={item} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
@@ -171,7 +183,7 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
                 onChange={() => setSize(item)}
                 className="h-4 w-4 accent-black"
               />
-              {item === "all" ? "All Size" : item}
+              {item === "all" ? (lang === "id" ? "Semua Ukuran" : "All Size") : item}
             </label>
           ))}
         </div>
@@ -187,14 +199,14 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
 
       <div>
         <div className="mb-5 flex items-center justify-between gap-4">
-          <h2 className="font-display text-4xl uppercase leading-none text-foreground">All Products</h2>
+          <h2 className="font-display text-4xl uppercase leading-none text-foreground">{lang === "id" ? "Semua Produk" : "All Products"}</h2>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setMobileFilterOpen(true)}
               className="border border-border bg-background px-3 py-2 text-sm text-foreground lg:hidden"
             >
-              Filter
+              {lang === "id" ? "Filter" : "Filter"}
             </button>
 
             <label className="text-sm text-foreground">
@@ -204,10 +216,10 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
                 onChange={(event) => setSortBy(event.target.value as SortOption)}
                 className="border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
               >
-                <option value="featured">Sort: Featured</option>
-                <option value="newest">Sort: Newest</option>
-                <option value="price-low">Sort: Price Low</option>
-                <option value="price-high">Sort: Price High</option>
+                <option value="featured">{lang === "id" ? "Urut: Unggulan" : "Sort: Featured"}</option>
+                <option value="newest">{lang === "id" ? "Urut: Terbaru" : "Sort: Newest"}</option>
+                <option value="price-low">{lang === "id" ? "Urut: Harga Rendah" : "Sort: Price Low"}</option>
+                <option value="price-high">{lang === "id" ? "Urut: Harga Tinggi" : "Sort: Price High"}</option>
               </select>
             </label>
           </div>
@@ -235,13 +247,13 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">Filters</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">{lang === "id" ? "Filter" : "Filters"}</p>
                 <button
                   type="button"
                   onClick={() => setMobileFilterOpen(false)}
                   className="text-xs uppercase tracking-[0.14em] text-muted"
                 >
-                  Close
+                  {lang === "id" ? "Tutup" : "Close"}
                 </button>
               </div>
 
@@ -253,7 +265,7 @@ export function ProductCatalog({ products }: ProductCatalogProps) {
                   onClick={() => setMobileFilterOpen(false)}
                   className="w-full bg-foreground px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-background"
                 >
-                  Apply Filters
+                  {lang === "id" ? "Terapkan Filter" : "Apply Filters"}
                 </button>
               </div>
             </motion.div>

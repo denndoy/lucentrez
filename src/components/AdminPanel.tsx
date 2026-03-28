@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import type { AppLang } from "@/lib/lang";
 import { ProductView } from "@/lib/types";
 
 type GalleryItem = {
@@ -13,6 +14,7 @@ type GalleryItem = {
 type AdminPanelProps = {
   initialProducts: ProductView[];
   initialGallery: GalleryItem[];
+  lang: AppLang;
 };
 
 type ToastState = {
@@ -37,7 +39,7 @@ const emptyProduct = {
   soldOut: false,
 };
 
-export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps) {
+export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [gallery, setGallery] = useState(initialGallery);
   const [form, setForm] = useState(emptyProduct);
@@ -59,6 +61,76 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
   function showToast(type: ToastState["type"], message: string) {
     setToast({ type, message });
   }
+
+  const text = lang === "id"
+    ? {
+        productCms: "CMS Produk",
+        productCmsDesc: "Buat atau ubah produk katalog dan tautan marketplace.",
+        productName: "Nama produk",
+        priceIdr: "Harga dalam IDR",
+        marketplaceUrl: "URL marketplace",
+        description: "Deskripsi",
+        markSoldOut: "Tandai sebagai sold out",
+        images: "Gambar",
+        chooseImage: "Pilih Gambar",
+        noFileSelected: "Belum ada file",
+        uploadImage: "Upload Gambar",
+        imageUrls: "URL gambar (satu per baris)",
+        remove: "Hapus",
+        updateProduct: "Ubah Produk",
+        createProduct: "Buat Produk",
+        reset: "Reset",
+        currentProducts: "Produk Saat Ini",
+        searchProducts: "Cari produk",
+        inStock: "Tersedia",
+        soldOut: "Sold Out",
+        edit: "Ubah",
+        delete: "Hapus",
+        communityCms: "CMS Komunitas",
+        searchGallery: "Cari galeri",
+        galleryTitle: "Judul galeri",
+        imageUrl: "URL gambar",
+        addImage: "Tambah Gambar",
+        confirmDelete: "Konfirmasi Hapus",
+        deleteProductLabel: "produk",
+        deleteGalleryLabel: "foto komunitas",
+        cancel: "Batal",
+        yesDelete: "Ya, Hapus",
+      }
+    : {
+        productCms: "Product CMS",
+        productCmsDesc: "Create or update catalog products and marketplace links.",
+        productName: "Product name",
+        priceIdr: "Price in IDR",
+        marketplaceUrl: "marketplace URL",
+        description: "Description",
+        markSoldOut: "Mark as sold out",
+        images: "Images",
+        chooseImage: "Choose Image",
+        noFileSelected: "No file selected",
+        uploadImage: "Upload Image",
+        imageUrls: "Image URLs (one per line)",
+        remove: "Remove",
+        updateProduct: "Update Product",
+        createProduct: "Create Product",
+        reset: "Reset",
+        currentProducts: "Current Products",
+        searchProducts: "Search products",
+        inStock: "In Stock",
+        soldOut: "Sold Out",
+        edit: "Edit",
+        delete: "Delete",
+        communityCms: "Community CMS",
+        searchGallery: "Search gallery",
+        galleryTitle: "Gallery title",
+        imageUrl: "Image URL",
+        addImage: "Add Image",
+        confirmDelete: "Confirm Delete",
+        deleteProductLabel: "product",
+        deleteGalleryLabel: "gallery image",
+        cancel: "Cancel",
+        yesDelete: "Yes, Delete",
+      };
 
   const editing = useMemo(() => products.find((product) => product.id === form.id), [form.id, products]);
   const categoryOptions = useMemo(
@@ -114,13 +186,13 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
   async function onSubmitProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form.name || !form.price || !form.description) {
-      showToast("error", "Please fill all required fields.");
+      showToast("error", lang === "id" ? "Mohon isi semua field wajib." : "Please fill all required fields.");
       return;
     }
 
     const images = form.images.split("\n").map((item) => item.trim()).filter(Boolean);
     if (images.length === 0) {
-      showToast("error", "Please add at least one image.");
+      showToast("error", lang === "id" ? "Tambahkan minimal satu gambar." : "Please add at least one image.");
       return;
     }
 
@@ -146,11 +218,11 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      showToast("error", data.message ? `Failed to save product: ${data.message}` : "Failed to save product.");
+      showToast("error", data.message ? `${lang === "id" ? "Gagal menyimpan produk" : "Failed to save product"}: ${data.message}` : (lang === "id" ? "Gagal menyimpan produk." : "Failed to save product."));
       return;
     }
 
-    showToast("success", form.id ? "Product updated." : "Product created.");
+    showToast("success", form.id ? (lang === "id" ? "Produk berhasil diperbarui." : "Product updated.") : (lang === "id" ? "Produk berhasil dibuat." : "Product created."));
     setForm(emptyProduct);
     await refresh();
   }
@@ -220,11 +292,11 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
     });
 
     if (!response.ok) {
-      showToast("error", "Failed to delete product.");
+      showToast("error", lang === "id" ? "Gagal menghapus produk." : "Failed to delete product.");
       return;
     }
 
-    showToast("success", "Product deleted.");
+    showToast("success", lang === "id" ? "Produk berhasil dihapus." : "Product deleted.");
     await refresh();
   }
 
@@ -240,11 +312,11 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      showToast("error", data.message ? `Failed to save gallery image: ${data.message}` : "Failed to save gallery image.");
+      showToast("error", data.message ? `${lang === "id" ? "Gagal menyimpan foto komunitas" : "Failed to save gallery image"}: ${data.message}` : (lang === "id" ? "Gagal menyimpan foto komunitas." : "Failed to save gallery image."));
       return;
     }
 
-    showToast("success", "Gallery image added.");
+    showToast("success", lang === "id" ? "Foto komunitas berhasil ditambahkan." : "Gallery image added.");
     setGalleryForm({ title: "", imageUrl: "" });
     await refresh();
   }
@@ -257,11 +329,11 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      showToast("error", data.message ? `Failed to delete gallery image: ${data.message}` : "Failed to delete gallery image.");
+      showToast("error", data.message ? `${lang === "id" ? "Gagal menghapus foto komunitas" : "Failed to delete gallery image"}: ${data.message}` : (lang === "id" ? "Gagal menghapus foto komunitas." : "Failed to delete gallery image."));
       return;
     }
 
-    showToast("success", "Gallery image deleted.");
+    showToast("success", lang === "id" ? "Foto komunitas berhasil dihapus." : "Gallery image deleted.");
     await refresh();
   }
 
@@ -281,15 +353,15 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
     <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_24px_rgba(0,0,0,0.1)]">
-          <h2 className="font-display text-3xl uppercase text-foreground">Product CMS</h2>
-          <p className="mt-2 text-sm text-muted">Create or update catalog products and marketplace links.</p>
+          <h2 className="font-display text-3xl uppercase text-foreground">{text.productCms}</h2>
+          <p className="mt-2 text-sm text-muted">{text.productCmsDesc}</p>
 
           <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmitProduct}>
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Product name" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={text.productName} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
             <input
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
-              placeholder="Price in IDR"
+              placeholder={text.priceIdr}
               type="number"
               min={0}
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
@@ -308,12 +380,12 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
             <input
               value={form.shopeeUrl}
               onChange={(e) => setForm({ ...form, shopeeUrl: e.target.value })}
-              placeholder="marketplace URL"
+              placeholder={text.marketplaceUrl}
               type="url"
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
               required
             />
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="min-h-28 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground md:col-span-2" required />
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder={text.description} className="min-h-28 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground md:col-span-2" required />
 
             <label className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground md:col-span-2">
               <input
@@ -322,14 +394,14 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                 onChange={(e) => setForm({ ...form, soldOut: e.target.checked })}
                 className="h-4 w-4 accent-black"
               />
-              Mark as sold out
+              {text.markSoldOut}
             </label>
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-xs uppercase tracking-[0.15em] text-muted">Images</label>
+              <label className="mb-2 block text-xs uppercase tracking-[0.15em] text-muted">{text.images}</label>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
-                  Choose Image
+                  {text.chooseImage}
                   <input
                     type="file"
                     accept="image/*"
@@ -338,7 +410,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                   />
                 </label>
                 <span className="max-w-[220px] truncate text-xs text-muted">
-                  {productImageFile ? productImageFile.name : "No file selected"}
+                  {productImageFile ? productImageFile.name : text.noFileSelected}
                 </span>
                 <button
                   type="button"
@@ -346,14 +418,14 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                   onClick={onUploadProductImage}
                   disabled={!productImageFile}
                 >
-                  Upload Image
+                  {text.uploadImage}
                 </button>
                 <span className="text-xs text-muted">{uploading}</span>
               </div>
               <textarea
                 value={form.images}
                 onChange={(e) => setForm({ ...form, images: e.target.value })}
-                placeholder="Image URLs (one per line)"
+                placeholder={text.imageUrls}
                 className="mt-3 min-h-28 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                 required
               />
@@ -369,7 +441,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                       className="rounded-full border border-border px-2 py-1 text-[10px] uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
                       onClick={() => removeProductImage(url)}
                     >
-                      Remove
+                      {text.remove}
                     </button>
                   </div>
                 ))}
@@ -378,14 +450,14 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
             <div className="flex flex-wrap gap-3 md:col-span-2">
               <button className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
-                {editing ? "Update Product" : "Create Product"}
+                {editing ? text.updateProduct : text.createProduct}
               </button>
               <button
                 className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background"
                 type="button"
                 onClick={() => setForm(emptyProduct)}
               >
-                Reset
+                {text.reset}
               </button>
             </div>
           </form>
@@ -393,11 +465,11 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_24px_rgba(0,0,0,0.1)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-display text-2xl uppercase text-foreground">Current Products</h3>
+            <h3 className="font-display text-2xl uppercase text-foreground">{text.currentProducts}</h3>
             <input
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
-              placeholder="Search products"
+              placeholder={text.searchProducts}
               className="rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground"
             />
           </div>
@@ -415,7 +487,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                   <div>
                     <p className="font-semibold text-foreground">{product.name}</p>
                     <p className="mt-1 text-xs text-muted">
-                      {product.category} • Rp{product.price.toLocaleString("id-ID")} • {product.inStock ? "In Stock" : "Sold Out"}
+                      {product.category} • Rp{product.price.toLocaleString("id-ID")} • {product.inStock ? text.inStock : text.soldOut}
                     </p>
                   </div>
                 </div>
@@ -436,7 +508,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                       })
                     }
                   >
-                    Edit
+                    {text.edit}
                   </button>
                   <button
                     type="button"
@@ -449,7 +521,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                       })
                     }
                   >
-                    Delete
+                    {text.delete}
                   </button>
                 </div>
               </article>
@@ -460,20 +532,20 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_24px_rgba(0,0,0,0.1)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-3xl uppercase text-foreground">Community CMS</h2>
+          <h2 className="font-display text-3xl uppercase text-foreground">{text.communityCms}</h2>
           <input
             value={gallerySearch}
             onChange={(e) => setGallerySearch(e.target.value)}
-            placeholder="Search gallery"
+            placeholder={text.searchGallery}
             className="rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground"
           />
         </div>
         <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={onSubmitGallery}>
-          <input value={galleryForm.title} onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })} placeholder="Gallery title" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
-          <input value={galleryForm.imageUrl} onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })} placeholder="Image URL" className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
+          <input value={galleryForm.title} onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })} placeholder={text.galleryTitle} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
+          <input value={galleryForm.imageUrl} onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })} placeholder={text.imageUrl} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
           <div className="flex flex-wrap items-center gap-2 md:col-span-2">
             <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
-              Choose Image
+              {text.chooseImage}
               <input
                 type="file"
                 accept="image/*"
@@ -482,7 +554,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
               />
             </label>
             <span className="max-w-[220px] truncate text-xs text-muted">
-              {galleryImageFile ? galleryImageFile.name : "No file selected"}
+              {galleryImageFile ? galleryImageFile.name : text.noFileSelected}
             </span>
             <button
               className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
@@ -490,12 +562,12 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
               onClick={onUploadGalleryImage}
               disabled={!galleryImageFile}
             >
-              Upload Image
+              {text.uploadImage}
             </button>
             <span className="text-xs text-muted">{uploading}</span>
           </div>
           <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
-            Add Image
+            {text.addImage}
           </button>
         </form>
 
@@ -526,7 +598,7 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                   })
                 }
               >
-                Delete
+                {text.delete}
               </button>
             </article>
           ))}
@@ -549,9 +621,9 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
             className="mx-auto mt-[16vh] w-[92%] max-w-md rounded-xl border border-border bg-card p-5 shadow-[0_20px_48px_rgba(0,0,0,0.4)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <p className="text-xs uppercase tracking-[0.14em] text-muted">Confirm Delete</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-muted">{text.confirmDelete}</p>
             <p className="mt-2 text-sm text-foreground">
-              Delete {deleteTarget.type === "product" ? "product" : "gallery image"} <strong>{deleteTarget.label}</strong>?
+              {lang === "id" ? "Hapus" : "Delete"} {deleteTarget.type === "product" ? text.deleteProductLabel : text.deleteGalleryLabel} <strong>{deleteTarget.label}</strong>?
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -559,14 +631,14 @@ export function AdminPanel({ initialProducts, initialGallery }: AdminPanelProps)
                 className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
                 onClick={() => setDeleteTarget(null)}
               >
-                Cancel
+                {text.cancel}
               </button>
               <button
                 type="button"
                 className="rounded-full border border-red-700/40 bg-red-100 px-4 py-2 text-xs uppercase tracking-[0.14em] text-red-900"
                 onClick={onConfirmDelete}
               >
-                Yes, Delete
+                {text.yesDelete}
               </button>
             </div>
           </div>
