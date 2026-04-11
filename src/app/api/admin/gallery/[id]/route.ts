@@ -8,9 +8,16 @@ type Params = {
 };
 
 const gallerySchema = z.object({
-  title: z.string().min(2),
+  title: z.string().min(2).optional(),
   imageUrl: z.string().url(),
 });
+
+function buildAutoTitle(imageUrl: string, prefix: string) {
+  const url = new URL(imageUrl);
+  const baseName = url.pathname.split("/").filter(Boolean).pop()?.replace(/\.[^.]+$/, "") ?? "image";
+  const readable = baseName.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim() || "image";
+  return `${prefix} ${readable}`;
+}
 
 const idSchema = z.string().uuid();
 
@@ -34,7 +41,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { data: image, error } = await supabaseAdmin
     .from("gallery_images")
     .update({
-      title: parsed.data.title,
+      title: parsed.data.title?.trim() || buildAutoTitle(parsed.data.imageUrl, "Gallery"),
       image_url: parsed.data.imageUrl,
     })
     .eq("id", parsedId.data)

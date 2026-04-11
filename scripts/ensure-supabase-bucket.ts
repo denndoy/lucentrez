@@ -25,7 +25,7 @@ async function ensureBucket() {
     const { error: createError } = await supabase.storage.createBucket(bucketName, {
       public: true,
       fileSizeLimit: 5 * 1024 * 1024,
-      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"],
     });
 
     if (createError) {
@@ -37,7 +37,7 @@ async function ensureBucket() {
     const { error: updateError } = await supabase.storage.updateBucket(bucketName, {
       public: true,
       fileSizeLimit: 5 * 1024 * 1024,
-      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"],
     });
 
     if (updateError) {

@@ -29,6 +29,15 @@ type DeleteTarget = {
   label: string;
 };
 
+type UploadTarget = "product" | "gallery" | "hero";
+
+type UploadStatusState = Record<UploadTarget, string>;
+
+type ApiFieldError = {
+  path?: Array<string | number>;
+  message?: string;
+};
+
 const emptyProduct = {
   id: "",
   name: "",
@@ -46,6 +55,40 @@ function hasValidUuidId<T extends { id: string }>(item: T) {
   return UUID_RE.test(item.id);
 }
 
+function buildAutoTitle(fileName: string, prefix: string) {
+  const stem = fileName.replace(/\.[^.]+$/, "").replace(/[^a-z0-9]+/gi, " ").replace(/\s+/g, " ").trim();
+  const readable = stem || prefix;
+  return `${prefix} ${readable} ${Date.now().toString().slice(-4)}`;
+}
+
+function UploadPreview({ src, alt, fileName }: { src: string; alt: string; fileName: string }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-background">
+      <div className="relative aspect-[4/3] w-full bg-black/5">
+        <img src={src} alt={alt} className="h-full w-full object-cover" />
+      </div>
+      <p className="break-all px-3 py-2 text-xs text-muted">{fileName}</p>
+    </div>
+  );
+}
+
+function formatApiErrors(payload: unknown) {
+  if (!payload || typeof payload !== "object") return "";
+
+  const errors = (payload as { errors?: unknown }).errors;
+  if (!Array.isArray(errors) || errors.length === 0) return "";
+
+  return errors
+    .map((item) => {
+      const error = item as ApiFieldError;
+      const field = Array.isArray(error.path) && error.path.length > 0 ? error.path.join(".") : "";
+      const message = error.message ?? "Invalid value.";
+      return field ? `${field}: ${message}` : message;
+    })
+    .filter(Boolean)
+    .join("; ");
+}
+
 export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides, lang }: AdminPanelProps) {
   const [products, setProducts] = useState(() => initialProducts.filter(hasValidUuidId));
   const [gallery, setGallery] = useState(() => initialGallery.filter(hasValidUuidId));
@@ -61,7 +104,19 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState("");
+  const [productPreviewUrl, setProductPreviewUrl] = useState("");
+  const [galleryPreviewUrl, setGalleryPreviewUrl] = useState("");
+  const [heroPreviewUrl, setHeroPreviewUrl] = useState("");
+  const [uploadStatus, setUploadStatus] = useState<UploadStatusState>({
+    product: "",
+    gallery: "",
+    hero: "",
+  });
+  const [formErrors, setFormErrors] = useState({
+    product: "",
+    gallery: "",
+    hero: "",
+  });
 
   useEffect(() => {
     if (!toast) return;
@@ -69,8 +124,48 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
     return () => clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    if (!productImageFile) {
+      setProductPreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(productImageFile);
+    setProductPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [productImageFile]);
+
+  useEffect(() => {
+    if (!galleryImageFile) {
+      setGalleryPreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(galleryImageFile);
+    setGalleryPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [galleryImageFile]);
+
+  useEffect(() => {
+    if (!heroImageFile) {
+      setHeroPreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(heroImageFile);
+    setHeroPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [heroImageFile]);
+
   function showToast(type: ToastState["type"], message: string) {
     setToast({ type, message });
+  }
+
+  function setUploadStatusMessage(target: UploadTarget, message: string) {
+    setUploadStatus((prev) => ({
+      ...prev,
+      [target]: message,
+    }));
   }
 
   const text = lang === "id"
@@ -86,7 +181,8 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         chooseImage: "Pilih Gambar",
         noFileSelected: "Belum ada file",
         uploadImage: "Upload Gambar",
-        imageUrls: "URL gambar (satu per baris)",
+        addImageAction: "Add Image",
+        addSlideAction: "Add Slide",
         remove: "Hapus",
         updateProduct: "Ubah Produk",
         createProduct: "Buat Produk",
@@ -101,12 +197,9 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         heroCms: "Slider Landing",
         searchGallery: "Cari galeri",
         searchHero: "Cari slide",
-        galleryTitle: "Judul galeri",
-        heroTitle: "Judul slide",
-        imageUrl: "URL gambar",
         addImage: "Tambah Gambar",
         updateImage: "Ubah Gambar",
-        addSlide: "Tambah Slide",
+        addSlide: "Upload Image",
         updateSlide: "Ubah Slide",
         quickOverview: "Ringkasan Cepat",
         totalProducts: "Total Produk",
@@ -134,7 +227,8 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         chooseImage: "Choose Image",
         noFileSelected: "No file selected",
         uploadImage: "Upload Image",
-        imageUrls: "Image URLs (one per line)",
+        addImageAction: "Add Image",
+        addSlideAction: "Add Slide",
         remove: "Remove",
         updateProduct: "Update Product",
         createProduct: "Create Product",
@@ -149,12 +243,9 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         heroCms: "Landing Slider",
         searchGallery: "Search gallery",
         searchHero: "Search slides",
-        galleryTitle: "Gallery title",
-        heroTitle: "Slide title",
-        imageUrl: "Image URL",
         addImage: "Add Image",
         updateImage: "Update Image",
-        addSlide: "Add Slide",
+        addSlide: "Upload Image",
         updateSlide: "Update Slide",
         quickOverview: "Quick Overview",
         totalProducts: "Total Products",
@@ -183,6 +274,25 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
   const productImages = useMemo(
     () => form.images.split("\n").map((item) => item.trim()).filter(Boolean),
     [form.images],
+  );
+  const productNameValid = form.name.trim().length >= 2;
+  const productDescriptionValid = form.description.trim().length >= 10;
+  const productPrice = Number(form.price);
+  const productUrlValid = (() => {
+    try {
+      new URL(form.shopeeUrl.trim());
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  const canSubmitProduct = Boolean(
+    productNameValid &&
+      Number.isFinite(productPrice) &&
+      productPrice > 0 &&
+      productDescriptionValid &&
+      productImages.length > 0 &&
+      productUrlValid,
   );
   const filteredProducts = useMemo(
     () =>
@@ -253,24 +363,20 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
 
   async function onSubmitProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.name || !form.price || !form.description) {
+    if (!canSubmitProduct) {
       showToast("error", lang === "id" ? "Mohon isi semua field wajib." : "Please fill all required fields.");
       return;
     }
 
-    const images = form.images.split("\n").map((item) => item.trim()).filter(Boolean);
-    if (images.length === 0) {
-      showToast("error", lang === "id" ? "Tambahkan minimal satu gambar." : "Please add at least one image.");
-      return;
-    }
+    const images = productImages;
 
     const payload = {
-      name: form.name,
-      price: Number(form.price),
+      name: form.name.trim(),
+      price: productPrice,
       category: form.category,
-      description: form.description,
+      description: form.description.trim(),
       images,
-      shopeeUrl: form.shopeeUrl,
+      shopeeUrl: form.shopeeUrl.trim(),
       soldOut: form.soldOut,
     };
 
@@ -295,8 +401,8 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
     await refresh();
   }
 
-  async function uploadImage(file: File, folder: "products" | "gallery" | "hero") {
-    setUploading("Uploading image...");
+  async function uploadImage(file: File, folder: "products" | "gallery" | "hero", target: UploadTarget) {
+    setUploadStatusMessage(target, lang === "id" ? "Mengupload gambar..." : "Uploading image...");
     const formData = new FormData();
     formData.append("file", file);
     formData.append("folder", folder);
@@ -310,22 +416,22 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      setUploading(data.message ? `Upload failed: ${data.message}` : "Upload failed.");
+      setUploadStatusMessage(target, data.message ? `${lang === "id" ? "Upload gagal" : "Upload failed"}: ${data.message}` : (lang === "id" ? "Upload gagal." : "Upload failed."));
       return null;
     }
 
     if (!data.url) {
-      setUploading("Upload failed: missing URL.");
+      setUploadStatusMessage(target, lang === "id" ? "Upload gagal: URL tidak tersedia." : "Upload failed: missing URL.");
       return null;
     }
 
-    setUploading("Upload complete.");
+    setUploadStatusMessage(target, lang === "id" ? "Upload selesai." : "Upload complete.");
     return data.url as string;
   }
 
   async function onUploadProductImage() {
     if (!productImageFile) return;
-    const url = await uploadImage(productImageFile, "products");
+    const url = await uploadImage(productImageFile, "products", "product");
     if (!url) return;
     setForm((prev) => ({
       ...prev,
@@ -336,17 +442,27 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
 
   async function onUploadGalleryImage() {
     if (!galleryImageFile) return;
-    const url = await uploadImage(galleryImageFile, "gallery");
+    const fileName = galleryImageFile.name;
+    const url = await uploadImage(galleryImageFile, "gallery", "gallery");
     if (!url) return;
-    setGalleryForm((prev) => ({ ...prev, imageUrl: url }));
+    setGalleryForm((prev) => ({
+      ...prev,
+      title: prev.title || buildAutoTitle(fileName, "Gallery"),
+      imageUrl: url,
+    }));
     setGalleryImageFile(null);
   }
 
   async function onUploadHeroImage() {
     if (!heroImageFile) return;
-    const url = await uploadImage(heroImageFile, "hero");
+    const fileName = heroImageFile.name;
+    const url = await uploadImage(heroImageFile, "hero", "hero");
     if (!url) return;
-    setHeroForm((prev) => ({ ...prev, imageUrl: url }));
+    setHeroForm((prev) => ({
+      ...prev,
+      title: prev.title || buildAutoTitle(fileName, "Slide"),
+      imageUrl: url,
+    }));
     setHeroImageFile(null);
   }
 
@@ -552,36 +668,40 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
 
             <div className="md:col-span-2">
               <label className="mb-2 block text-xs uppercase tracking-[0.15em] text-muted">{text.images}</label>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
-                  {text.chooseImage}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)}
-                    className="hidden"
-                  />
-                </label>
-                <span className="max-w-[220px] truncate text-xs text-muted">
-                  {productImageFile ? productImageFile.name : text.noFileSelected}
-                </span>
-                <button
-                  type="button"
-                  className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
-                  onClick={onUploadProductImage}
-                  disabled={!productImageFile}
-                >
-                  {text.uploadImage}
-                </button>
-                <span className="text-xs text-muted">{uploading}</span>
+              <div className="rounded-2xl border border-border bg-background p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+                    {text.chooseImage}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="max-w-[220px] truncate text-xs text-muted">
+                    {productImageFile ? productImageFile.name : text.noFileSelected}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
+                    onClick={onUploadProductImage}
+                    disabled={!productImageFile}
+                  >
+                    {text.uploadImage}
+                  </button>
+                </div>
+                <div className="mt-2 text-xs text-muted">{uploadStatus.product}</div>
               </div>
-              <textarea
-                value={form.images}
-                onChange={(e) => setForm({ ...form, images: e.target.value })}
-                placeholder={text.imageUrls}
-                className="mt-3 min-h-28 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                required
-              />
+              {productPreviewUrl ? (
+                <div className="mt-3">
+                  <UploadPreview
+                    src={productPreviewUrl}
+                    alt={productImageFile?.name || "Product preview"}
+                    fileName={productImageFile?.name || "Product preview"}
+                  />
+                </div>
+              ) : null}
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {productImages.map((url) => (
                   <div key={url} className="flex items-center gap-2 rounded-lg border border-border bg-background p-2">
@@ -599,20 +719,38 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
                   </div>
                 ))}
               </div>
+              {productImages.length === 0 ? (
+                <p className="mt-3 rounded-lg border border-dashed border-border px-4 py-4 text-sm text-muted">
+                  {lang === "id"
+                    ? "Belum ada gambar. Upload minimal satu foto produk."
+                    : "No images yet. Upload at least one product photo."}
+                </p>
+              ) : null}
             </div>
 
-            <div className="flex flex-wrap gap-3 md:col-span-2">
-              <button className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
-                {editing ? text.updateProduct : text.createProduct}
-              </button>
-              <button
-                className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background"
-                type="button"
-                onClick={() => setForm(emptyProduct)}
-              >
-                {text.reset}
-              </button>
+            <div className="border-t border-border pt-4 md:col-span-2">
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background disabled:cursor-not-allowed disabled:opacity-50"
+                  type="submit"
+                  disabled={!canSubmitProduct}
+                >
+                  {editing ? text.updateProduct : text.createProduct}
+                </button>
+                <button
+                  className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background"
+                  type="button"
+                  onClick={() => setForm(emptyProduct)}
+                >
+                  {text.reset}
+                </button>
+              </div>
             </div>
+            {formErrors.product ? (
+              <p className="md:col-span-2 rounded-lg border border-red-400/40 bg-red-50 px-3 py-2 text-sm text-red-900">
+                {formErrors.product}
+              </p>
+            ) : null}
           </form>
         </div>
 
@@ -630,13 +768,15 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
             {filteredProducts.map((product) => (
               <article key={product.id} className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                 <div className="min-w-0 flex items-center gap-3">
-                  <Image
-                    src={product.images[0] ?? "/products/placeholder.svg"}
-                    alt={product.name}
-                    width={48}
-                    height={48}
-                    className="h-12 w-12 rounded-lg border border-border object-cover"
-                  />
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-background">
+                    <Image
+                      src={product.images[0] ?? "/products/placeholder.svg"}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      sizes="48px"
+                    />
+                  </div>
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-foreground">{product.name}</p>
                     <p className="mt-1 line-clamp-2 text-xs text-muted sm:line-clamp-1">
@@ -666,13 +806,6 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
                   <button
                     type="button"
                     className="rounded-full border border-red-400/60 px-3 py-1 text-xs uppercase tracking-widest text-red-300"
-                    onClick={() =>
-                      setDeleteTarget({
-                        type: "product",
-                        id: product.id,
-                        label: product.name,
-                      })
-                    }
                   >
                     {text.delete}
                   </button>
@@ -699,58 +832,76 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
           />
         </div>
         <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={onSubmitGallery}>
-          <input value={galleryForm.title} onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })} placeholder={text.galleryTitle} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
-          <input value={galleryForm.imageUrl} onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })} placeholder={text.imageUrl} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" required />
-          <div className="flex flex-wrap items-center gap-2 md:col-span-2">
-            <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
-              {text.chooseImage}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => setGalleryImageFile(event.target.files?.[0] ?? null)}
-                className="hidden"
-              />
-            </label>
-            <span className="max-w-[220px] truncate text-xs text-muted">
-              {galleryImageFile ? galleryImageFile.name : text.noFileSelected}
-            </span>
-            <button
-              className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
-              type="button"
-              onClick={onUploadGalleryImage}
-              disabled={!galleryImageFile}
-            >
-              {text.uploadImage}
-            </button>
-            <span className="text-xs text-muted">{uploading}</span>
-          </div>
-          <div className="flex items-center gap-2 md:col-span-2">
-            <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
-              {galleryForm.id ? text.updateImage : text.addImage}
-            </button>
-            {galleryForm.id ? (
+          <div className="md:col-span-2 rounded-2xl border border-border bg-background p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+                {text.chooseImage}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => setGalleryImageFile(event.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+              </label>
+              <span className="max-w-[220px] truncate text-xs text-muted">
+                {galleryImageFile ? galleryImageFile.name : text.noFileSelected}
+              </span>
               <button
+                className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
                 type="button"
-                className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
-                onClick={() => setGalleryForm({ id: "", title: "", imageUrl: "" })}
+                onClick={onUploadGalleryImage}
+                disabled={!galleryImageFile}
               >
-                {text.cancel}
+                {text.addImageAction}
               </button>
-            ) : null}
+            </div>
+            <div className="mt-2 text-xs text-muted">{uploadStatus.gallery}</div>
           </div>
+          {galleryPreviewUrl ? (
+            <div className="md:col-span-2">
+              <UploadPreview
+                src={galleryPreviewUrl}
+                alt={galleryImageFile?.name || "Gallery preview"}
+                fileName={galleryImageFile?.name || "Gallery preview"}
+              />
+            </div>
+          ) : null}
+          <div className="border-t border-border pt-4 md:col-span-2">
+            <div className="flex items-center gap-2">
+              <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
+                {galleryForm.id ? text.updateImage : text.addImage}
+              </button>
+              {galleryForm.id ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
+                  onClick={() => setGalleryForm({ id: "", title: "", imageUrl: "" })}
+                >
+                  {text.cancel}
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {formErrors.gallery ? (
+            <p className="md:col-span-2 rounded-lg border border-red-400/40 bg-red-50 px-3 py-2 text-sm text-red-900">
+              {formErrors.gallery}
+            </p>
+          ) : null}
         </form>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {filteredGallery.map((item) => (
             <article key={item.id} className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex items-center gap-3">
-                <Image
-                  src={item.imageUrl || "/products/placeholder.svg"}
-                  alt={item.title}
-                  width={48}
-                  height={48}
-                  className="h-12 w-12 rounded-lg border border-border object-cover"
-                />
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-background">
+                  <Image
+                    src={item.imageUrl || "/products/placeholder.svg"}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
+                </div>
                 <div className="min-w-0">
                   <p className="text-sm text-foreground">{item.title}</p>
                   <p className="break-all text-xs text-muted">{item.imageUrl}</p>
@@ -806,70 +957,76 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         </div>
 
         <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={onSubmitHeroSlide}>
-          <input
-            value={heroForm.title}
-            onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })}
-            placeholder={text.heroTitle}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-            required
-          />
-          <input
-            value={heroForm.imageUrl}
-            onChange={(e) => setHeroForm({ ...heroForm, imageUrl: e.target.value })}
-            placeholder={text.imageUrl}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-            required
-          />
-          <div className="flex flex-wrap items-center gap-2 md:col-span-2">
-            <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
-              {text.chooseImage}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => setHeroImageFile(event.target.files?.[0] ?? null)}
-                className="hidden"
-              />
-            </label>
-            <span className="max-w-[220px] truncate text-xs text-muted">
-              {heroImageFile ? heroImageFile.name : text.noFileSelected}
-            </span>
-            <button
-              className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
-              type="button"
-              onClick={onUploadHeroImage}
-              disabled={!heroImageFile}
-            >
-              {text.uploadImage}
-            </button>
-            <span className="text-xs text-muted">{uploading}</span>
-          </div>
-          <div className="flex items-center gap-2 md:col-span-2">
-            <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
-              {heroForm.id ? text.updateSlide : text.addSlide}
-            </button>
-            {heroForm.id ? (
+          <div className="md:col-span-2 rounded-2xl border border-border bg-background p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+                {text.chooseImage}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => setHeroImageFile(event.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+              </label>
+              <span className="max-w-[220px] truncate text-xs text-muted">
+                {heroImageFile ? heroImageFile.name : text.noFileSelected}
+              </span>
               <button
+                className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
                 type="button"
-                className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
-                onClick={() => setHeroForm({ id: "", title: "", imageUrl: "" })}
+                onClick={onUploadHeroImage}
+                disabled={!heroImageFile}
               >
-                {text.cancel}
+                {text.addSlideAction}
               </button>
-            ) : null}
+            </div>
+            <div className="mt-2 text-xs text-muted">{uploadStatus.hero}</div>
           </div>
+          {heroPreviewUrl ? (
+            <div className="md:col-span-2">
+              <UploadPreview
+                src={heroPreviewUrl}
+                alt={heroImageFile?.name || "Hero preview"}
+                fileName={heroImageFile?.name || "Hero preview"}
+              />
+            </div>
+          ) : null}
+          <div className="border-t border-border pt-4 md:col-span-2">
+            <div className="flex items-center gap-2">
+              <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
+                {heroForm.id ? text.updateSlide : text.addSlide}
+              </button>
+              {heroForm.id ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
+                  onClick={() => setHeroForm({ id: "", title: "", imageUrl: "" })}
+                >
+                  {text.cancel}
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {formErrors.hero ? (
+            <p className="md:col-span-2 rounded-lg border border-red-400/40 bg-red-50 px-3 py-2 text-sm text-red-900">
+              {formErrors.hero}
+            </p>
+          ) : null}
         </form>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {filteredHeroSlides.map((item) => (
             <article key={item.id} className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex items-center gap-3">
-                <Image
-                  src={item.imageUrl || "/products/placeholder.svg"}
-                  alt={item.title}
-                  width={48}
-                  height={48}
-                  className="h-12 w-12 rounded-lg border border-border object-cover"
-                />
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-background">
+                  <Image
+                    src={item.imageUrl || "/products/placeholder.svg"}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
+                </div>
                 <div className="min-w-0">
                   <p className="text-sm text-foreground">{item.title}</p>
                   <p className="break-all text-xs text-muted">{item.imageUrl}</p>

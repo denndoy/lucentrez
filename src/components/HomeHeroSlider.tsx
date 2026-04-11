@@ -30,9 +30,19 @@ export function HomeHeroSlider({ lang, slides }: HomeHeroSliderProps) {
   const swipeVelocity = useRef(0);
   const isDragging = useRef(false);
 
+  function isInteractiveTarget(target: EventTarget | null) {
+    if (!(target instanceof Element)) return false;
+    return Boolean(target.closest("a, button, input, textarea, select, label"));
+  }
+
   const active = safeSlides.length <= 1
     ? 0
     : ((displayIndex - 1 + safeSlides.length) % safeSlides.length);
+
+  function normalizeDisplayIndex(index: number, length: number) {
+    if (length <= 1) return 0;
+    return ((index - 1) % length + length) % length + 1;
+  }
 
   function goNext() {
     if (safeSlides.length <= 1) return;
@@ -120,6 +130,16 @@ export function HomeHeroSlider({ lang, slides }: HomeHeroSliderProps) {
   }, [safeSlides.length]);
 
   useEffect(() => {
+    if (safeSlides.length <= 1) return;
+
+    const maxCloneIndex = safeSlides.length + 1;
+    if (displayIndex > maxCloneIndex || displayIndex < 0) {
+      setIsInstantJump(true);
+      setDisplayIndex(normalizeDisplayIndex(displayIndex, safeSlides.length));
+    }
+  }, [displayIndex, safeSlides.length]);
+
+  useEffect(() => {
     if (!isInstantJump) return;
 
     const frame = requestAnimationFrame(() => {
@@ -132,10 +152,10 @@ export function HomeHeroSlider({ lang, slides }: HomeHeroSliderProps) {
   function onTrackTransitionEnd() {
     if (safeSlides.length <= 1) return;
 
-    if (displayIndex === safeSlides.length + 1) {
+    if (displayIndex >= safeSlides.length + 1) {
       setIsInstantJump(true);
       setDisplayIndex(1);
-    } else if (displayIndex === 0) {
+    } else if (displayIndex <= 0) {
       setIsInstantJump(true);
       setDisplayIndex(safeSlides.length);
     }
@@ -167,6 +187,9 @@ export function HomeHeroSlider({ lang, slides }: HomeHeroSliderProps) {
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       onPointerDown={(event) => {
+        if (isInteractiveTarget(event.target)) {
+          return;
+        }
         event.currentTarget.setPointerCapture(event.pointerId);
         onDragStart(event.clientX);
       }}

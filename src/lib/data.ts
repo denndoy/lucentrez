@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { unstable_noStore as noStore } from "next/cache";
-import { fallbackGallery, fallbackHeroSlides, fallbackProducts } from "@/lib/mock-data";
+import { fallbackGallery } from "@/lib/mock-data";
 import { formatRupiah } from "@/lib/format";
 import { GalleryItem, HeroSlide, ProductView } from "@/lib/types";
 
@@ -65,12 +65,12 @@ export async function getAllProducts(): Promise<ProductView[]> {
 
     if (error) throw error;
     if (!products || products.length === 0) {
-      return fallbackProducts;
+      return [];
     }
 
     return products.map(toProductView);
   } catch {
-    return fallbackProducts;
+    return [];
   }
 }
 
@@ -90,11 +90,11 @@ export async function getProductBySlug(slug: string): Promise<ProductView | null
 
     if (error && error.code !== "PGRST116") throw error;
     if (!product) {
-      return fallbackProducts.find((item) => item.slug === slug) ?? null;
+      return null;
     }
     return toProductView(product);
   } catch {
-    return fallbackProducts.find((item) => item.slug === slug) ?? null;
+    return null;
   }
 }
 
@@ -108,7 +108,7 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
 
     if (error) throw error;
     if (!gallery || gallery.length === 0) {
-      return fallbackGallery;
+      return [];
     }
     return gallery.map((item, index) => ({
       id: item.id,
@@ -117,7 +117,7 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
       createdAt: new Date(item.created_at),
     }));
   } catch {
-    return fallbackGallery;
+    return [];
   }
 }
 

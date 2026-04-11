@@ -8,9 +8,16 @@ type Params = {
 };
 
 const heroSlideSchema = z.object({
-  title: z.string().min(2),
+  title: z.string().min(2).optional(),
   imageUrl: z.string().url(),
 });
+
+function buildAutoTitle(imageUrl: string, prefix: string) {
+  const url = new URL(imageUrl);
+  const baseName = url.pathname.split("/").filter(Boolean).pop()?.replace(/\.[^.]+$/, "") ?? "slide";
+  const readable = baseName.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim() || "slide";
+  return `${prefix} ${readable}`;
+}
 
 const idSchema = z.string().uuid();
 
@@ -33,7 +40,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const { data: slide, error } = await supabaseAdmin
     .from("hero_slides")
-    .update({ title: parsed.data.title, image_url: parsed.data.imageUrl })
+    .update({
+      title: parsed.data.title?.trim() || buildAutoTitle(parsed.data.imageUrl, "Slide"),
+      image_url: parsed.data.imageUrl,
+    })
     .eq("id", parsedId.data)
     .select()
     .single();
