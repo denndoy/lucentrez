@@ -4,7 +4,7 @@ import { ContactForm } from "@/components/ContactForm";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 
 export const metadata: Metadata = {
-  title: "Contact | Lucentrez",
+  title: "Contact",
   description: "Contact Lucentrez for sizing, collabs, and product inquiries.",
 };
 

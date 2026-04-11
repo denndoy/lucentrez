@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Catalog | Lucentrez",
+  title: "Catalog",
   description: "Browse Lucentrez streetwear products and continue checkout on marketplace.",
 };
 

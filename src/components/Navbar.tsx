@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { AppLang } from "@/lib/lang";
 
@@ -54,8 +55,17 @@ export function Navbar({ initialLang }: NavbarProps) {
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md">
       <nav className="w-full py-4">
         <div className="flex items-center justify-between px-2 md:hidden">
-          <Link href="/" className="font-display text-2xl tracking-[0.18em] text-foreground">
-            LUCENTREZ
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo_lucentrez_v2.webp"
+              alt="Lucentrez Logo"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
+            <span className="font-display text-2xl tracking-[0.18em] text-foreground">
+              LUCENTREZ
+            </span>
           </Link>
 
           <div className="relative flex items-center gap-2">
@@ -109,7 +119,14 @@ export function Navbar({ initialLang }: NavbarProps) {
         </div>
 
         <div className="hidden px-2 md:grid md:grid-cols-3 md:items-center md:gap-4">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo_lucentrez_v2.webp"
+              alt="Lucentrez Logo"
+              width={48}
+              height={48}
+              className="h-12 w-12"
+            />
             <Link href="/" className="font-display text-5xl tracking-[0.08em] text-foreground">
               LUCENTREZ
             </Link>
