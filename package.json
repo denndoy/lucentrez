@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:supabase": "ts-node test-supabase-connection.ts",
+    "apply:rls": "ts-node apply-rls-policies.ts",
+    "check:rls": "ts-node check-rls-status.ts",
+    "check:production": "bash scripts/production-check.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",
@@ -22,9 +26,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
