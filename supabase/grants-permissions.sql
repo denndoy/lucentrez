@@ -10,6 +10,7 @@
 -- Revoke from all client-facing roles first
 REVOKE ALL PRIVILEGES ON TABLE public.products FROM public, anon, authenticated;
 REVOKE ALL PRIVILEGES ON TABLE public.gallery_images FROM public, anon, authenticated;
+REVOKE ALL PRIVILEGES ON TABLE public.hero_slides FROM public, anon, authenticated;
 
 -- ============================================================================
 -- GRANT ONLY SELECT (READ) TO PUBLIC
@@ -18,10 +19,12 @@ REVOKE ALL PRIVILEGES ON TABLE public.gallery_images FROM public, anon, authenti
 -- Allow read-only access for anon and authenticated users
 GRANT SELECT ON TABLE public.products TO anon, authenticated;
 GRANT SELECT ON TABLE public.gallery_images TO anon, authenticated;
+GRANT SELECT ON TABLE public.hero_slides TO anon, authenticated;
 
 -- Keep service_role full access for server-side admin operations
 GRANT ALL PRIVILEGES ON TABLE public.products TO service_role;
 GRANT ALL PRIVILEGES ON TABLE public.gallery_images TO service_role;
+GRANT ALL PRIVILEGES ON TABLE public.hero_slides TO service_role;
 
 -- Optional hardening for future tables created by postgres in schema public
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
@@ -35,7 +38,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
 
 -- Run this to verify permissions:
 -- SELECT * FROM information_schema.table_privileges 
--- WHERE table_name IN ('products', 'gallery_images')
+-- WHERE table_name IN ('products', 'gallery_images', 'hero_slides')
 --   AND grantee IN ('anon', 'authenticated', 'PUBLIC', 'service_role')
 -- ORDER BY table_name, grantee, privilege_type;
 

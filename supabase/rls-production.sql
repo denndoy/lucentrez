@@ -54,6 +54,34 @@ drop policy if exists "block_inserts_gallery_images" on public.gallery_images;
 drop policy if exists "block_updates_gallery_images" on public.gallery_images;
 drop policy if exists "block_deletes_gallery_images" on public.gallery_images;
 
+-- ============================================================================
+-- HERO SLIDES TABLE RLS
+-- ============================================================================
+
+alter table public.hero_slides enable row level security;
+
+drop policy if exists "public_read_hero_slides" on public.hero_slides;
+drop policy if exists "block_inserts_hero_slides" on public.hero_slides;
+drop policy if exists "block_updates_hero_slides" on public.hero_slides;
+drop policy if exists "block_deletes_hero_slides" on public.hero_slides;
+
+create policy "public_read_hero_slides" on public.hero_slides
+  for select
+  using (true);
+
+create policy "block_inserts_hero_slides" on public.hero_slides
+  for insert
+  with check (false);
+
+create policy "block_updates_hero_slides" on public.hero_slides
+  for update
+  using (false)
+  with check (false);
+
+create policy "block_deletes_hero_slides" on public.hero_slides
+  for delete
+  using (false);
+
 -- ✓ Public Read Access (allow anyone to view gallery)
 create policy "public_read_gallery_images" on public.gallery_images
   for select

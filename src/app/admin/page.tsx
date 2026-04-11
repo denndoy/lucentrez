@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { AdminPanel } from "@/components/AdminPanel";
 import { isAdminSessionFromCookies } from "@/lib/auth";
-import { getAllProducts, getGalleryItems } from "@/lib/data";
+import { getAllProducts, getGalleryItems, getHeroSlides } from "@/lib/data";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 
 export default async function AdminPage() {
@@ -14,25 +14,29 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [products, gallery] = await Promise.all([getAllProducts(), getGalleryItems()]);
+  const [products, gallery, heroSlides] = await Promise.all([
+    getAllProducts(),
+    getGalleryItems(),
+    getHeroSlides(),
+  ]);
 
   return (
-    <main className="w-full px-2 py-14">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <main className="mx-auto w-full max-w-[1600px] min-w-0 overflow-x-clip px-3 py-8 md:px-6 md:py-12 lg:px-8 xl:px-10">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 md:mb-8">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted">Lucentrez CMS</p>
-          <h1 className="font-display text-5xl uppercase leading-none text-foreground">
+          <h1 className="font-display text-3xl uppercase leading-none text-foreground sm:text-4xl md:text-5xl">
             {lang === "id" ? "Dashboard Admin" : "Admin Dashboard"}
           </h1>
         </div>
         <form action="/api/admin/logout" method="post">
-          <button className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background">
+          <button className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-foreground hover:text-background">
             {lang === "id" ? "Keluar" : "Logout"}
           </button>
         </form>
       </div>
 
-      <AdminPanel initialProducts={products} initialGallery={gallery} lang={lang} />
+      <AdminPanel initialProducts={products} initialGallery={gallery} initialHeroSlides={heroSlides} lang={lang} />
     </main>
   );
 }

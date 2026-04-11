@@ -7,7 +7,7 @@ type Params = {
   params: Promise<{ id: string }>;
 };
 
-const gallerySchema = z.object({
+const heroSlideSchema = z.object({
   title: z.string().min(2),
   imageUrl: z.string().url(),
 });
@@ -22,35 +22,32 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const parsedId = idSchema.safeParse(id);
   if (!parsedId.success) {
-    return NextResponse.json({ message: "Invalid gallery id" }, { status: 400 });
+    return NextResponse.json({ message: "Invalid hero slide id" }, { status: 400 });
   }
   const json = await request.json();
-  const parsed = gallerySchema.safeParse(json);
+  const parsed = heroSlideSchema.safeParse(json);
 
   if (!parsed.success) {
     return NextResponse.json({ message: "Invalid payload", errors: parsed.error.issues }, { status: 400 });
   }
 
-  const { data: image, error } = await supabaseAdmin
-    .from("gallery_images")
-    .update({
-      title: parsed.data.title,
-      image_url: parsed.data.imageUrl,
-    })
+  const { data: slide, error } = await supabaseAdmin
+    .from("hero_slides")
+    .update({ title: parsed.data.title, image_url: parsed.data.imageUrl })
     .eq("id", parsedId.data)
     .select()
     .single();
 
   if (error) {
-    return NextResponse.json({ message: "Failed to update gallery item", error: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Failed to update hero slide", error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({
-    image: {
-      id: image.id,
-      title: image.title,
-      imageUrl: image.image_url,
-      createdAt: image.created_at,
+    slide: {
+      id: slide.id,
+      title: slide.title,
+      imageUrl: slide.image_url,
+      createdAt: slide.created_at,
     },
   });
 }
@@ -63,13 +60,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const parsedId = idSchema.safeParse(id);
   if (!parsedId.success) {
-    return NextResponse.json({ message: "Invalid gallery id" }, { status: 400 });
+    return NextResponse.json({ message: "Invalid hero slide id" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin.from("gallery_images").delete().eq("id", parsedId.data);
+  const { error } = await supabaseAdmin.from("hero_slides").delete().eq("id", parsedId.data);
 
   if (error) {
-    return NextResponse.json({ message: "Failed to delete gallery item", error: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Failed to delete hero slide", error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

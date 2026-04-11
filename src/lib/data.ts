@@ -1,7 +1,27 @@
 import { supabase } from "@/lib/supabase";
-import { fallbackGallery, fallbackProducts } from "@/lib/mock-data";
+import { unstable_noStore as noStore } from "next/cache";
+import { fallbackGallery, fallbackHeroSlides, fallbackProducts } from "@/lib/mock-data";
 import { formatRupiah } from "@/lib/format";
-import { GalleryItem, ProductView } from "@/lib/types";
+import { GalleryItem, HeroSlide, ProductView } from "@/lib/types";
+
+function normalizeGalleryImageUrl(imageUrl: unknown, title: unknown, index: number): string {
+  const fallbackByTitle = new Map(
+    fallbackGallery.map((item) => [item.title.toLowerCase(), item.imageUrl]),
+  );
+
+  const safeUrl = typeof imageUrl === "string" ? imageUrl.trim() : "";
+  if (safeUrl && !safeUrl.startsWith("/gallery/")) {
+    return safeUrl;
+  }
+
+  const safeTitle = typeof title === "string" ? title.trim().toLowerCase() : "";
+  const byTitle = safeTitle ? fallbackByTitle.get(safeTitle) : undefined;
+  if (byTitle) {
+    return byTitle;
+  }
+
+  return fallbackGallery[index % fallbackGallery.length]?.imageUrl ?? "";
+}
 
 function toProductView(product: {
   id: string;
@@ -36,6 +56,7 @@ function toProductView(product: {
 }
 
 export async function getAllProducts(): Promise<ProductView[]> {
+  noStore();
   try {
     const { data: products, error } = await supabase
       .from("products")
@@ -47,14 +68,7 @@ export async function getAllProducts(): Promise<ProductView[]> {
       return fallbackProducts;
     }
 
-    const remoteProducts = products.map(toProductView);
-
-    // Keep Supabase products first, then fill with fallback items when data is sparse.
-    const mergedProducts = [...remoteProducts, ...fallbackProducts].filter(
-      (product, index, list) => list.findIndex((item) => item.slug === product.slug) === index,
-    );
-
-    return mergedProducts;
+    return products.map(toProductView);
   } catch {
     return fallbackProducts;
   }
@@ -66,6 +80,7 @@ export async function getFeaturedProducts(): Promise<ProductView[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductView | null> {
+  noStore();
   try {
     const { data: product, error } = await supabase
       .from("products")
@@ -84,6 +99,7 @@ export async function getProductBySlug(slug: string): Promise<ProductView | null
 }
 
 export async function getGalleryItems(): Promise<GalleryItem[]> {
+  noStore();
   try {
     const { data: gallery, error } = await supabase
       .from("gallery_images")
@@ -92,16 +108,40 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
 
     if (error) throw error;
     if (!gallery || gallery.length === 0) {
+      return fallbackGallery;
+    }
+    return gallery.map((item, index) => ({
+      id: item.id,
+      title: item.title,
+      imageUrl: normalizeGalleryImageUrl(item.image_url, item.title, index),
+      createdAt: new Date(item.created_at),
+    }));
+  } catch {
+    return fallbackGallery;
+  }
+}
+
+export async function getHeroSlides(): Promise<HeroSlide[]> {
+  noStore();
+  try {
+    const { data: slides, error } = await supabase
+      .from("hero_slides")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    if (!slides || slides.length === 0) {
       return [];
     }
-    return gallery.map((item) => ({
+
+    return slides.map((item) => ({
       id: item.id,
       title: item.title,
       imageUrl: item.image_url,
       createdAt: new Date(item.created_at),
     }));
   } catch {
-    return fallbackGallery;
+    return [];
   }
 }
 

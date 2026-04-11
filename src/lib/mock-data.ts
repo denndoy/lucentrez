@@ -1,4 +1,4 @@
-import { GalleryItem, ProductView } from "@/lib/types";
+import { GalleryItem, HeroSlide, ProductView } from "@/lib/types";
 
 export const fallbackProducts: ProductView[] = [
   {
@@ -131,10 +131,70 @@ export const fallbackProducts: ProductView[] = [
 ];
 
 export const fallbackGallery: GalleryItem[] = [
-  { id: "g1", title: "Night Alley Drop", imageUrl: "/gallery/look-01.svg", createdAt: new Date() },
-  { id: "g2", title: "Concrete Pulse", imageUrl: "/gallery/look-02.svg", createdAt: new Date() },
-  { id: "g3", title: "Subway Frequency", imageUrl: "/gallery/look-03.svg", createdAt: new Date() },
-  { id: "g4", title: "Signal Tower Fit", imageUrl: "/gallery/look-04.svg", createdAt: new Date() },
-  { id: "g5", title: "After Hours Kit", imageUrl: "/gallery/look-05.svg", createdAt: new Date() },
-  { id: "g6", title: "Neon Market Walk", imageUrl: "/gallery/look-06.svg", createdAt: new Date() },
+  {
+    id: "g1",
+    title: "Night Alley Drop",
+    imageUrl:
+      "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1400&q=80",
+    createdAt: new Date(),
+  },
+  {
+    id: "g2",
+    title: "Concrete Pulse",
+    imageUrl:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1400&q=80",
+    createdAt: new Date(),
+  },
+  {
+    id: "g3",
+    title: "Subway Frequency",
+    imageUrl:
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1400&q=80",
+    createdAt: new Date(),
+  },
+  {
+    id: "g4",
+    title: "Signal Tower Fit",
+    imageUrl:
+      "https://images.unsplash.com/photo-1464863979621-258859e62245?auto=format&fit=crop&w=1400&q=80",
+    createdAt: new Date(),
+  },
+  {
+    id: "g5",
+    title: "After Hours Kit",
+    imageUrl:
+      "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1400&q=80",
+    createdAt: new Date(),
+  },
+  {
+    id: "g6",
+    title: "Neon Market Walk",
+    imageUrl:
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1400&q=80",
+    createdAt: new Date(),
+  },
+];
+
+export const fallbackHeroSlides: HeroSlide[] = [
+  {
+    id: "h1",
+    title: "Urban Motion",
+    imageUrl:
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2048&h=1365&q=80",
+    createdAt: new Date(),
+  },
+  {
+    id: "h2",
+    title: "Street Editorial",
+    imageUrl:
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=2048&h=1365&q=80",
+    createdAt: new Date(),
+  },
+  {
+    id: "h3",
+    title: "After Hours Fit",
+    imageUrl:
+      "https://images.unsplash.com/photo-1464863979621-258859e62245?auto=format&fit=crop&w=2048&h=1365&q=80",
+    createdAt: new Date(),
+  },
 ];

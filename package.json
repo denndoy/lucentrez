@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test:supabase": "ts-node test-supabase-connection.ts",
+    "supabase:bucket": "ts-node scripts/ensure-supabase-bucket.ts",
     "apply:rls": "ts-node apply-rls-policies.ts",
     "check:rls": "ts-node check-rls-status.ts",
     "check:production": "bash scripts/production-check.sh"

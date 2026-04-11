@@ -5,6 +5,12 @@ const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : undefined
 const nextConfig: NextConfig = {
   images: {
     domains: ["images.unsplash.com", ...(supabaseHostname ? [supabaseHostname] : [])],
+    remotePatterns: [
+      new URL("https://images.unsplash.com/**"),
+      ...(supabaseHostname
+        ? [new URL(`https://${supabaseHostname}/**`)]
+        : []),
+    ],
   },
 };
 

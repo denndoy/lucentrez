@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { AppLang } from "@/lib/lang";
-import { ProductView } from "@/lib/types";
+import { HeroSlide, ProductView } from "@/lib/types";
 
 type GalleryItem = {
   id: string;
@@ -14,6 +14,7 @@ type GalleryItem = {
 type AdminPanelProps = {
   initialProducts: ProductView[];
   initialGallery: GalleryItem[];
+  initialHeroSlides: HeroSlide[];
   lang: AppLang;
 };
 
@@ -23,7 +24,7 @@ type ToastState = {
 };
 
 type DeleteTarget = {
-  type: "product" | "gallery";
+  type: "product" | "gallery" | "hero";
   id: string;
   label: string;
 };
@@ -39,17 +40,27 @@ const emptyProduct = {
   soldOut: false,
 };
 
-export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanelProps) {
-  const [products, setProducts] = useState(initialProducts);
-  const [gallery, setGallery] = useState(initialGallery);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function hasValidUuidId<T extends { id: string }>(item: T) {
+  return UUID_RE.test(item.id);
+}
+
+export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides, lang }: AdminPanelProps) {
+  const [products, setProducts] = useState(() => initialProducts.filter(hasValidUuidId));
+  const [gallery, setGallery] = useState(() => initialGallery.filter(hasValidUuidId));
+  const [heroSlides, setHeroSlides] = useState(() => initialHeroSlides.filter(hasValidUuidId));
   const [form, setForm] = useState(emptyProduct);
-  const [galleryForm, setGalleryForm] = useState({ title: "", imageUrl: "" });
+  const [galleryForm, setGalleryForm] = useState({ id: "", title: "", imageUrl: "" });
+  const [heroForm, setHeroForm] = useState({ id: "", title: "", imageUrl: "" });
   const [toast, setToast] = useState<ToastState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [gallerySearch, setGallerySearch] = useState("");
+  const [heroSearch, setHeroSearch] = useState("");
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
+  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState("");
 
   useEffect(() => {
@@ -87,13 +98,27 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
         edit: "Ubah",
         delete: "Hapus",
         communityCms: "CMS Komunitas",
+        heroCms: "Slider Landing",
         searchGallery: "Cari galeri",
+        searchHero: "Cari slide",
         galleryTitle: "Judul galeri",
+        heroTitle: "Judul slide",
         imageUrl: "URL gambar",
         addImage: "Tambah Gambar",
+        updateImage: "Ubah Gambar",
+        addSlide: "Tambah Slide",
+        updateSlide: "Ubah Slide",
+        quickOverview: "Ringkasan Cepat",
+        totalProducts: "Total Produk",
+        totalGallery: "Foto Komunitas",
+        totalSlides: "Slide Landing",
+        noProducts: "Tidak ada produk ditemukan.",
+        noGallery: "Tidak ada foto komunitas ditemukan.",
+        noSlides: "Tidak ada slide landing ditemukan.",
         confirmDelete: "Konfirmasi Hapus",
         deleteProductLabel: "produk",
         deleteGalleryLabel: "foto komunitas",
+        deleteHeroLabel: "slide landing",
         cancel: "Batal",
         yesDelete: "Ya, Hapus",
       }
@@ -121,13 +146,27 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
         edit: "Edit",
         delete: "Delete",
         communityCms: "Community CMS",
+        heroCms: "Landing Slider",
         searchGallery: "Search gallery",
+        searchHero: "Search slides",
         galleryTitle: "Gallery title",
+        heroTitle: "Slide title",
         imageUrl: "Image URL",
         addImage: "Add Image",
+        updateImage: "Update Image",
+        addSlide: "Add Slide",
+        updateSlide: "Update Slide",
+        quickOverview: "Quick Overview",
+        totalProducts: "Total Products",
+        totalGallery: "Community Photos",
+        totalSlides: "Landing Slides",
+        noProducts: "No products found.",
+        noGallery: "No community images found.",
+        noSlides: "No landing slides found.",
         confirmDelete: "Confirm Delete",
         deleteProductLabel: "product",
         deleteGalleryLabel: "gallery image",
+        deleteHeroLabel: "landing slide",
         cancel: "Cancel",
         yesDelete: "Yes, Delete",
       };
@@ -159,11 +198,28 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
       ),
     [gallery, gallerySearch],
   );
+  const filteredHeroSlides = useMemo(
+    () =>
+      heroSlides.filter((item) =>
+        item.title.toLowerCase().includes(heroSearch.trim().toLowerCase()),
+      ),
+    [heroSearch, heroSlides],
+  );
+
+  const overviewCards = useMemo(
+    () => [
+      { label: text.totalProducts, value: products.length },
+      { label: text.totalGallery, value: gallery.length },
+      { label: text.totalSlides, value: heroSlides.length },
+    ],
+    [gallery.length, heroSlides.length, products.length, text.totalGallery, text.totalProducts, text.totalSlides],
+  );
 
   async function refresh() {
-    const [productsRes, galleryRes] = await Promise.all([
+    const [productsRes, galleryRes, heroRes] = await Promise.all([
       fetch("/api/admin/products", { credentials: "include" }),
       fetch("/api/admin/gallery", { credentials: "include" }),
+      fetch("/api/admin/hero-slides", { credentials: "include" }),
     ]);
 
     if (productsRes.ok) {
@@ -178,6 +234,18 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
           id: item.id,
           title: item.title,
           imageUrl: item.imageUrl ?? item.image_url ?? "",
+        })),
+      );
+    }
+
+    if (heroRes.ok) {
+      const data = await heroRes.json();
+      setHeroSlides(
+        (data.slides ?? []).map((item: { id: string; title: string; imageUrl?: string; image_url?: string }) => ({
+          id: item.id,
+          title: item.title,
+          imageUrl: item.imageUrl ?? item.image_url ?? "",
+          createdAt: new Date(),
         })),
       );
     }
@@ -227,7 +295,7 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
     await refresh();
   }
 
-  async function uploadImage(file: File, folder: "products" | "gallery") {
+  async function uploadImage(file: File, folder: "products" | "gallery" | "hero") {
     setUploading("Uploading image...");
     const formData = new FormData();
     formData.append("file", file);
@@ -274,6 +342,14 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
     setGalleryImageFile(null);
   }
 
+  async function onUploadHeroImage() {
+    if (!heroImageFile) return;
+    const url = await uploadImage(heroImageFile, "hero");
+    if (!url) return;
+    setHeroForm((prev) => ({ ...prev, imageUrl: url }));
+    setHeroImageFile(null);
+  }
+
   function removeProductImage(url: string) {
     setForm((prev) => ({
       ...prev,
@@ -303,10 +379,13 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
   async function onSubmitGallery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const response = await fetch("/api/admin/gallery", {
-      method: "POST",
+    const endpoint = galleryForm.id ? `/api/admin/gallery/${galleryForm.id}` : "/api/admin/gallery";
+    const method = galleryForm.id ? "PATCH" : "POST";
+
+    const response = await fetch(endpoint, {
+      method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(galleryForm),
+      body: JSON.stringify({ title: galleryForm.title, imageUrl: galleryForm.imageUrl }),
       credentials: "include",
     });
 
@@ -316,8 +395,13 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
       return;
     }
 
-    showToast("success", lang === "id" ? "Foto komunitas berhasil ditambahkan." : "Gallery image added.");
-    setGalleryForm({ title: "", imageUrl: "" });
+    showToast(
+      "success",
+      galleryForm.id
+        ? (lang === "id" ? "Foto komunitas berhasil diperbarui." : "Gallery image updated.")
+        : (lang === "id" ? "Foto komunitas berhasil ditambahkan." : "Gallery image added."),
+    );
+    setGalleryForm({ id: "", title: "", imageUrl: "" });
     await refresh();
   }
 
@@ -337,23 +421,92 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
     await refresh();
   }
 
+  async function onSubmitHeroSlide(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const endpoint = heroForm.id ? `/api/admin/hero-slides/${heroForm.id}` : "/api/admin/hero-slides";
+    const method = heroForm.id ? "PATCH" : "POST";
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: heroForm.title, imageUrl: heroForm.imageUrl }),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      showToast(
+        "error",
+        data.message
+          ? `${lang === "id" ? "Gagal menyimpan slide" : "Failed to save slide"}: ${data.message}`
+          : (lang === "id" ? "Gagal menyimpan slide." : "Failed to save slide."),
+      );
+      return;
+    }
+
+    showToast(
+      "success",
+      heroForm.id
+        ? (lang === "id" ? "Slide berhasil diperbarui." : "Slide updated.")
+        : (lang === "id" ? "Slide berhasil ditambahkan." : "Slide added."),
+    );
+    setHeroForm({ id: "", title: "", imageUrl: "" });
+    await refresh();
+  }
+
+  async function onDeleteHeroSlide(id: string) {
+    const response = await fetch(`/api/admin/hero-slides/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      showToast(
+        "error",
+        data.message
+          ? `${lang === "id" ? "Gagal menghapus slide" : "Failed to delete slide"}: ${data.message}`
+          : (lang === "id" ? "Gagal menghapus slide." : "Failed to delete slide."),
+      );
+      return;
+    }
+
+    showToast("success", lang === "id" ? "Slide berhasil dihapus." : "Slide deleted.");
+    await refresh();
+  }
+
   async function onConfirmDelete() {
     if (!deleteTarget) return;
 
     if (deleteTarget.type === "product") {
       await onDeleteProduct(deleteTarget.id);
-    } else {
+    } else if (deleteTarget.type === "gallery") {
       await onDeleteGallery(deleteTarget.id);
+    } else {
+      await onDeleteHeroSlide(deleteTarget.id);
     }
 
     setDeleteTarget(null);
   }
 
   return (
-    <div className="space-y-8">
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_24px_rgba(0,0,0,0.1)]">
-          <h2 className="font-display text-3xl uppercase text-foreground">{text.productCms}</h2>
+    <div className="w-full min-w-0 space-y-6 overflow-x-clip md:space-y-8">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_rgba(0,0,0,0.1)] md:p-5">
+        <p className="text-xs uppercase tracking-[0.16em] text-muted">{text.quickOverview}</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {overviewCards.map((card) => (
+            <article key={card.label} className="rounded-xl border border-border bg-background p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-muted">{card.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">{card.value}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_rgba(0,0,0,0.1)] md:p-5">
+          <h2 className="font-display text-2xl uppercase text-foreground md:text-3xl">{text.productCms}</h2>
           <p className="mt-2 text-sm text-muted">{text.productCmsDesc}</p>
 
           <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmitProduct}>
@@ -463,7 +616,7 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
           </form>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_24px_rgba(0,0,0,0.1)]">
+        <div className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_rgba(0,0,0,0.1)] md:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-display text-2xl uppercase text-foreground">{text.currentProducts}</h3>
             <input
@@ -473,10 +626,10 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
               className="rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground"
             />
           </div>
-          <div className="mt-4 grid gap-3">
+          <div className="mt-4 grid max-h-[70vh] gap-3 overflow-auto pr-1">
             {filteredProducts.map((product) => (
-              <article key={product.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4">
-                <div className="flex items-center gap-3">
+              <article key={product.id} className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                <div className="min-w-0 flex items-center gap-3">
                   <Image
                     src={product.images[0] ?? "/products/placeholder.svg"}
                     alt={product.name}
@@ -484,14 +637,14 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
                     height={48}
                     className="h-12 w-12 rounded-lg border border-border object-cover"
                   />
-                  <div>
-                    <p className="font-semibold text-foreground">{product.name}</p>
-                    <p className="mt-1 text-xs text-muted">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-foreground">{product.name}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted sm:line-clamp-1">
                       {product.category} • Rp{product.price.toLocaleString("id-ID")} • {product.inStock ? text.inStock : text.soldOut}
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 self-end sm:self-auto">
                   <button
                     type="button"
                     className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
@@ -526,13 +679,18 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
                 </div>
               </article>
             ))}
+            {filteredProducts.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted">
+                {text.noProducts}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_24px_rgba(0,0,0,0.1)]">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_rgba(0,0,0,0.1)] md:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-3xl uppercase text-foreground">{text.communityCms}</h2>
+          <h2 className="font-display text-2xl uppercase text-foreground md:text-3xl">{text.communityCms}</h2>
           <input
             value={gallerySearch}
             onChange={(e) => setGallerySearch(e.target.value)}
@@ -566,15 +724,26 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
             </button>
             <span className="text-xs text-muted">{uploading}</span>
           </div>
-          <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
-            {text.addImage}
-          </button>
+          <div className="flex items-center gap-2 md:col-span-2">
+            <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
+              {galleryForm.id ? text.updateImage : text.addImage}
+            </button>
+            {galleryForm.id ? (
+              <button
+                type="button"
+                className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
+                onClick={() => setGalleryForm({ id: "", title: "", imageUrl: "" })}
+              >
+                {text.cancel}
+              </button>
+            ) : null}
+          </div>
         </form>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {filteredGallery.map((item) => (
-            <article key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
-              <div className="flex items-center gap-3">
+            <article key={item.id} className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex items-center gap-3">
                 <Image
                   src={item.imageUrl || "/products/placeholder.svg"}
                   alt={item.title}
@@ -582,26 +751,165 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
                   height={48}
                   className="h-12 w-12 rounded-lg border border-border object-cover"
                 />
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-foreground">{item.title}</p>
-                  <p className="text-xs text-muted">{item.imageUrl}</p>
+                  <p className="break-all text-xs text-muted">{item.imageUrl}</p>
                 </div>
               </div>
-              <button
-                type="button"
-                className="rounded-full border border-red-400/60 px-3 py-1 text-xs uppercase tracking-widest text-red-300"
-                onClick={() =>
-                  setDeleteTarget({
-                    type: "gallery",
-                    id: item.id,
-                    label: item.title,
-                  })
-                }
-              >
-                {text.delete}
-              </button>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground"
+                  onClick={() =>
+                    setGalleryForm({
+                      id: item.id,
+                      title: item.title,
+                      imageUrl: item.imageUrl,
+                    })
+                  }
+                >
+                  {text.edit}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-red-400/60 px-3 py-1 text-xs uppercase tracking-widest text-red-300"
+                  onClick={() =>
+                    setDeleteTarget({
+                      type: "gallery",
+                      id: item.id,
+                      label: item.title,
+                    })
+                  }
+                >
+                  {text.delete}
+                </button>
+              </div>
             </article>
           ))}
+          {filteredGallery.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted md:col-span-2">
+              {text.noGallery}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_rgba(0,0,0,0.1)] md:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-2xl uppercase text-foreground md:text-3xl">{text.heroCms}</h2>
+          <input
+            value={heroSearch}
+            onChange={(e) => setHeroSearch(e.target.value)}
+            placeholder={text.searchHero}
+            className="rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground"
+          />
+        </div>
+
+        <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={onSubmitHeroSlide}>
+          <input
+            value={heroForm.title}
+            onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })}
+            placeholder={text.heroTitle}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+            required
+          />
+          <input
+            value={heroForm.imageUrl}
+            onChange={(e) => setHeroForm({ ...heroForm, imageUrl: e.target.value })}
+            placeholder={text.imageUrl}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+            required
+          />
+          <div className="flex flex-wrap items-center gap-2 md:col-span-2">
+            <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+              {text.chooseImage}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => setHeroImageFile(event.target.files?.[0] ?? null)}
+                className="hidden"
+              />
+            </label>
+            <span className="max-w-[220px] truncate text-xs text-muted">
+              {heroImageFile ? heroImageFile.name : text.noFileSelected}
+            </span>
+            <button
+              className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
+              type="button"
+              onClick={onUploadHeroImage}
+              disabled={!heroImageFile}
+            >
+              {text.uploadImage}
+            </button>
+            <span className="text-xs text-muted">{uploading}</span>
+          </div>
+          <div className="flex items-center gap-2 md:col-span-2">
+            <button className="w-fit rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background" type="submit">
+              {heroForm.id ? text.updateSlide : text.addSlide}
+            </button>
+            {heroForm.id ? (
+              <button
+                type="button"
+                className="rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.14em] text-foreground"
+                onClick={() => setHeroForm({ id: "", title: "", imageUrl: "" })}
+              >
+                {text.cancel}
+              </button>
+            ) : null}
+          </div>
+        </form>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {filteredHeroSlides.map((item) => (
+            <article key={item.id} className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex items-center gap-3">
+                <Image
+                  src={item.imageUrl || "/products/placeholder.svg"}
+                  alt={item.title}
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 rounded-lg border border-border object-cover"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm text-foreground">{item.title}</p>
+                  <p className="break-all text-xs text-muted">{item.imageUrl}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground"
+                  onClick={() =>
+                    setHeroForm({
+                      id: item.id,
+                      title: item.title,
+                      imageUrl: item.imageUrl,
+                    })
+                  }
+                >
+                  {text.edit}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-red-400/60 px-3 py-1 text-xs uppercase tracking-widest text-red-300"
+                  onClick={() =>
+                    setDeleteTarget({
+                      type: "hero",
+                      id: item.id,
+                      label: item.title,
+                    })
+                  }
+                >
+                  {text.delete}
+                </button>
+              </div>
+            </article>
+          ))}
+          {filteredHeroSlides.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted md:col-span-2">
+              {text.noSlides}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -623,7 +931,13 @@ export function AdminPanel({ initialProducts, initialGallery, lang }: AdminPanel
           >
             <p className="text-xs uppercase tracking-[0.14em] text-muted">{text.confirmDelete}</p>
             <p className="mt-2 text-sm text-foreground">
-              {lang === "id" ? "Hapus" : "Delete"} {deleteTarget.type === "product" ? text.deleteProductLabel : text.deleteGalleryLabel} <strong>{deleteTarget.label}</strong>?
+              {lang === "id" ? "Hapus" : "Delete"}{" "}
+              {deleteTarget.type === "product"
+                ? text.deleteProductLabel
+                : deleteTarget.type === "gallery"
+                  ? text.deleteGalleryLabel
+                  : text.deleteHeroLabel}{" "}
+              <strong>{deleteTarget.label}</strong>?
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button

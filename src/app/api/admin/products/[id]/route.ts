@@ -13,6 +13,8 @@ const productSchema = z.object({
   soldOut: z.boolean().optional(),
 });
 
+const idSchema = z.string().uuid();
+
 type Params = {
   params: Promise<{ id: string }>;
 };
@@ -23,6 +25,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) {
+    return NextResponse.json({ message: "Invalid product id" }, { status: 400 });
+  }
   const json = await request.json();
   const parsed = productSchema.safeParse({
     ...json,
@@ -44,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       category: parsed.data.category ?? "Tops",
       sold_out: parsed.data.soldOut ?? false,
     })
-    .eq("id", id)
+    .eq("id", parsedId.data)
     .select()
     .single();
 
@@ -61,7 +67,12 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const { error } = await supabaseAdmin.from("products").delete().eq("id", id);
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) {
+    return NextResponse.json({ message: "Invalid product id" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin.from("products").delete().eq("id", parsedId.data);
 
   if (error) {
     return NextResponse.json({ message: "Failed to delete product", error: error.message }, { status: 500 });

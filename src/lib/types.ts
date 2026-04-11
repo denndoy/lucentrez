@@ -18,6 +18,13 @@ export type GalleryItem = {
   createdAt: Date;
 };
 
+export type HeroSlide = {
+  id: string;
+  title: string;
+  imageUrl: string;
+  createdAt: Date;
+};
+
 export type AdminProductInput = {
   name: string;
   price: number;
