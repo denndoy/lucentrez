@@ -10,6 +10,7 @@ create table if not exists public.products (
   price integer not null,
   description text not null,
   images jsonb not null default '[]'::jsonb,
+  hover_image text,
   shopeeUrl text not null,
   category text not null,
   sold_out boolean not null default false,

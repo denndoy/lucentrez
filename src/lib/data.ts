@@ -30,6 +30,8 @@ function toProductView(product: {
   price: number;
   description: string;
   images: unknown;
+  hover_image?: string | null;
+  hoverImage?: string | null;
   shopeeurl?: string;
   shopeeUrl?: string;
   category: string;
@@ -48,6 +50,7 @@ function toProductView(product: {
     images: Array.isArray(product.images)
       ? product.images.filter((item): item is string => typeof item === "string")
       : [],
+    hoverImage: product.hover_image ?? product.hoverImage ?? null,
     shopeeUrl: product.shopeeurl ?? product.shopeeUrl ?? "https://shopee.co.id/",
     category: product.category,
     inStock: !soldOut,

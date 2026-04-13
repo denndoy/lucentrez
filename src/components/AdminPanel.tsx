@@ -45,6 +45,7 @@ const emptyProduct = {
   category: "Tops",
   description: "",
   images: "",
+  hoverImage: "",
   shopeeUrl: "https://shopee.co.id/",
   soldOut: false,
 };
@@ -102,9 +103,11 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
   const [gallerySearch, setGallerySearch] = useState("");
   const [heroSearch, setHeroSearch] = useState("");
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [hoverImageFile, setHoverImageFile] = useState<File | null>(null);
   const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [productPreviewUrl, setProductPreviewUrl] = useState("");
+  const [hoverPreviewUrl, setHoverPreviewUrl] = useState("");
   const [galleryPreviewUrl, setGalleryPreviewUrl] = useState("");
   const [heroPreviewUrl, setHeroPreviewUrl] = useState("");
   const [uploadStatus, setUploadStatus] = useState<UploadStatusState>({
@@ -134,6 +137,17 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
     setProductPreviewUrl(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [productImageFile]);
+
+  useEffect(() => {
+    if (!hoverImageFile) {
+      setHoverPreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(hoverImageFile);
+    setHoverPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [hoverImageFile]);
 
   useEffect(() => {
     if (!galleryImageFile) {
@@ -178,6 +192,8 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         description: "Deskripsi",
         markSoldOut: "Tandai sebagai sold out",
         images: "Gambar",
+        hoverImage: "Gambar Hover (opsional)",
+        hoverImageDesc: "Gambar yang tampil saat produk di-hover di katalog",
         chooseImage: "Pilih Gambar",
         noFileSelected: "Belum ada file",
         uploadImage: "Upload Gambar",
@@ -224,6 +240,8 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         description: "Description",
         markSoldOut: "Mark as sold out",
         images: "Images",
+        hoverImage: "Hover Image (optional)",
+        hoverImageDesc: "Image shown when product is hovered in catalog",
         chooseImage: "Choose Image",
         noFileSelected: "No file selected",
         uploadImage: "Upload Image",
@@ -376,6 +394,7 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
       category: form.category,
       description: form.description.trim(),
       images,
+      hoverImage: form.hoverImage.trim() || null,
       shopeeUrl: form.shopeeUrl.trim(),
       soldOut: form.soldOut,
     };
@@ -438,6 +457,17 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
       images: prev.images ? `${prev.images}\n${url}` : url,
     }));
     setProductImageFile(null);
+  }
+
+  async function onUploadHoverImage() {
+    if (!hoverImageFile) return;
+    const url = await uploadImage(hoverImageFile, "products", "product");
+    if (!url) return;
+    setForm((prev) => ({
+      ...prev,
+      hoverImage: url,
+    }));
+    setHoverImageFile(null);
   }
 
   async function onUploadGalleryImage() {
@@ -728,6 +758,57 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
               ) : null}
             </div>
 
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs uppercase tracking-[0.15em] text-muted">{text.hoverImage}</label>
+              <p className="mb-2 text-xs text-muted">{text.hoverImageDesc}</p>
+              <div className="rounded-2xl border border-border bg-background p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+                    {text.chooseImage}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setHoverImageFile(event.target.files?.[0] ?? null)}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="max-w-[220px] truncate text-xs text-muted">
+                    {hoverImageFile ? hoverImageFile.name : text.noFileSelected}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
+                    onClick={onUploadHoverImage}
+                    disabled={!hoverImageFile}
+                  >
+                    {text.uploadImage}
+                  </button>
+                </div>
+              </div>
+              {hoverPreviewUrl ? (
+                <div className="mt-3">
+                  <UploadPreview
+                    src={hoverPreviewUrl}
+                    alt={hoverImageFile?.name || "Hover preview"}
+                    fileName={hoverImageFile?.name || "Hover preview"}
+                  />
+                </div>
+              ) : null}
+              {form.hoverImage ? (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-background p-2">
+                  <Image src={form.hoverImage} alt="Hover preview" width={48} height={48} className="h-12 w-12 rounded-lg object-cover" />
+                  <p className="flex-1 truncate text-xs text-muted">{form.hoverImage}</p>
+                  <button
+                    type="button"
+                    className="rounded-full border border-border px-2 py-1 text-[10px] uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
+                    onClick={() => setForm({ ...form, hoverImage: "" })}
+                  >
+                    {text.remove}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
             <div className="border-t border-border pt-4 md:col-span-2">
               <div className="flex flex-wrap gap-3">
                 <button
@@ -796,6 +877,7 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
                         category: product.category,
                         description: product.description,
                         images: product.images.join("\n"),
+                        hoverImage: product.hoverImage ?? "",
                         shopeeUrl: product.shopeeUrl,
                         soldOut: !product.inStock,
                       })

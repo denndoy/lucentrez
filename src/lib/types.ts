@@ -5,6 +5,7 @@ export type ProductView = {
   price: number;
   description: string;
   images: string[];
+  hoverImage: string | null;
   shopeeUrl: string;
   category: string;
   inStock: boolean;
@@ -30,6 +31,7 @@ export type AdminProductInput = {
   price: number;
   description: string;
   images: string[];
+  hoverImage?: string | null;
   shopeeUrl: string;
   category?: string;
   soldOut?: boolean;

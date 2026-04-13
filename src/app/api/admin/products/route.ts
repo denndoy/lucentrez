@@ -9,6 +9,7 @@ const productSchema = z.object({
   price: z.number().int().positive(),
   description: z.string().min(10),
   images: z.array(z.string().url()).min(1),
+  hoverImage: z.string().url().nullable().optional(),
   shopeeUrl: z.string().url(),
   category: z.string().min(2).optional(),
   soldOut: z.boolean().optional(),
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     products: (products || []).map((product) => ({
       ...product,
       images: Array.isArray(product.images) ? product.images : [],
+      hoverImage: product.hover_image ?? null,
       shopeeUrl: product.shopeeurl,
       inStock: !Boolean(product.sold_out ?? false),
     })),
@@ -65,6 +67,7 @@ export async function POST(request: NextRequest) {
         price: parsed.data.price,
         description: parsed.data.description,
         images: parsed.data.images,
+        hover_image: parsed.data.hoverImage ?? null,
         shopeeurl: parsed.data.shopeeUrl,
         category: parsed.data.category ?? "Tops",
         sold_out: parsed.data.soldOut ?? false,
