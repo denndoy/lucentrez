@@ -132,12 +132,12 @@ export function Navbar({ initialLang }: NavbarProps) {
             </Link>
           </div>
 
-          <ul className="flex items-center justify-center gap-9">
+          <ul className="flex items-center justify-center gap-5">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="text-xs uppercase tracking-[0.18em] text-muted transition-colors hover:text-foreground"
+                  className="text-xs font-semibold uppercase tracking-[0.18em] text-muted transition-colors hover:text-foreground"
                 >
                   {link.label}
                 </Link>
