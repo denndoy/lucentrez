@@ -1,9 +1,16 @@
-export function ContactForm() {
+type ContactFormProps = {
+  whatsappNumber: string;
+  instagramUrl: string;
+};
+
+export function ContactForm({ whatsappNumber, instagramUrl }: ContactFormProps) {
+  const whatsappLink = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`;
+
   return (
     <section className="mt-6 border border-border bg-card">
       <div className="grid gap-0 sm:grid-cols-2">
         <a
-          href="https://wa.me/6281234567890"
+          href={whatsappLink}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="WhatsApp"
@@ -18,7 +25,7 @@ export function ContactForm() {
         </a>
 
         <a
-          href="https://instagram.com"
+          href={instagramUrl}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Instagram"

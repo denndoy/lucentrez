@@ -1,24 +1,13 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Bebas_Neue, Oswald, Sora } from "next/font/google";
+import { Oswald } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 import "./globals.css";
 
-const sora = Sora({
-  variable: "--font-sans-main",
-  subsets: ["latin"],
-});
-
-const bebas = Bebas_Neue({
-  variable: "--font-display-main",
-  weight: "400",
-  subsets: ["latin"],
-});
-
 const oswald = Oswald({
-  variable: "--font-oswald",
+  variable: "--font-main",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -53,7 +42,7 @@ export default async function RootLayout({
   const lang = normalizeLang(cookieStore.get(LANG_COOKIE)?.value);
 
   return (
-    <html lang={lang} className={`${sora.variable} ${bebas.variable} ${oswald.variable} h-full antialiased`}>
+    <html lang={lang} className={`${oswald.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Navbar initialLang={lang} />
         <div className="flex-1">{children}</div>

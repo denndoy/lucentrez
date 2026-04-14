@@ -14,8 +14,8 @@
   --color-card: var(--card);
   --color-border: var(--border);
   --color-muted: var(--muted);
-  --font-sans: var(--font-sans-main);
-  --font-display: var(--font-display-main);
+  --font-sans: var(--font-main);
+  --font-display: var(--font-main);
 }
 
 html {
@@ -30,7 +30,7 @@ body {
     radial-gradient(circle at 88% 14%, rgba(0, 0, 0, 0.06), transparent 35%),
     linear-gradient(180deg, #f8f8f8 0%, #f1f1f1 100%);
   color: var(--foreground);
-  font-family: var(--font-sans-main), sans-serif;
+  font-family: var(--font-main), sans-serif;
 }
 
 a {

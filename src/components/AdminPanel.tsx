@@ -15,6 +15,7 @@ type AdminPanelProps = {
   initialProducts: ProductView[];
   initialGallery: GalleryItem[];
   initialHeroSlides: HeroSlide[];
+  initialContactSettings: { whatsappNumber: string; instagramUrl: string };
   lang: AppLang;
 };
 
@@ -90,10 +91,11 @@ function formatApiErrors(payload: unknown) {
     .join("; ");
 }
 
-export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides, lang }: AdminPanelProps) {
+export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides, initialContactSettings, lang }: AdminPanelProps) {
   const [products, setProducts] = useState(() => initialProducts.filter(hasValidUuidId));
   const [gallery, setGallery] = useState(() => initialGallery.filter(hasValidUuidId));
   const [heroSlides, setHeroSlides] = useState(() => initialHeroSlides.filter(hasValidUuidId));
+  const [contactSettings, setContactSettings] = useState(initialContactSettings);
   const [form, setForm] = useState(emptyProduct);
   const [galleryForm, setGalleryForm] = useState({ id: "", title: "", imageUrl: "" });
   const [heroForm, setHeroForm] = useState({ id: "", title: "", imageUrl: "" });
@@ -230,6 +232,12 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         deleteHeroLabel: "slide landing",
         cancel: "Batal",
         yesDelete: "Ya, Hapus",
+        contactSettings: "Pengaturan Kontak",
+        contactSettingsDesc: "Atur nomor WhatsApp dan link Instagram untuk halaman kontak.",
+        whatsappNumber: "Nomor WhatsApp",
+        whatsappNumberDesc: "Format: 628xxx (tanpa tanda + atau spasi)",
+        instagramUrl: "Link Instagram",
+        updateContactSettings: "Simpan Pengaturan",
       }
     : {
         productCms: "Product CMS",
@@ -278,6 +286,12 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
         deleteHeroLabel: "landing slide",
         cancel: "Cancel",
         yesDelete: "Yes, Delete",
+        contactSettings: "Contact Settings",
+        contactSettingsDesc: "Set WhatsApp number and Instagram link for the contact page.",
+        whatsappNumber: "WhatsApp Number",
+        whatsappNumberDesc: "Format: 628xxx (without + or spaces)",
+        instagramUrl: "Instagram Link",
+        updateContactSettings: "Save Settings",
       };
 
   const editing = useMemo(() => products.find((product) => product.id === form.id), [form.id, products]);
@@ -630,6 +644,28 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
 
     showToast("success", lang === "id" ? "Slide berhasil dihapus." : "Slide deleted.");
     await refresh();
+  }
+
+  async function onSaveContactSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const response = await fetch("/api/admin/contact-settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        whatsappNumber: contactSettings.whatsappNumber,
+        instagramUrl: contactSettings.instagramUrl,
+      }),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      showToast("error", data.message ? `${lang === "id" ? "Gagal menyimpan pengaturan" : "Failed to save settings"}: ${data.message}` : (lang === "id" ? "Gagal menyimpan pengaturan." : "Failed to save settings."));
+      return;
+    }
+
+    showToast("success", lang === "id" ? "Pengaturan kontak berhasil disimpan." : "Contact settings saved.");
   }
 
   async function onConfirmDelete() {
@@ -1217,6 +1253,47 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
             </p>
           ) : null}
         </div>
+      </div>
+
+      {/* Contact Settings Section */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_rgba(0,0,0,0.1)] md:p-5">
+        <h2 className="font-display text-2xl uppercase text-foreground md:text-3xl">{text.contactSettings}</h2>
+        <p className="mt-2 text-sm text-muted">{text.contactSettingsDesc}</p>
+
+        <form className="mt-5 grid gap-3" onSubmit={onSaveContactSettings}>
+          <div>
+            <label className="mb-2 block text-xs uppercase tracking-[0.15em] text-muted">{text.whatsappNumber}</label>
+            <input
+              value={contactSettings.whatsappNumber}
+              onChange={(e) => setContactSettings({ ...contactSettings, whatsappNumber: e.target.value })}
+              placeholder="6281234567890"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              required
+            />
+            <p className="mt-1 text-xs text-muted">{text.whatsappNumberDesc}</p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs uppercase tracking-[0.15em] text-muted">{text.instagramUrl}</label>
+            <input
+              value={contactSettings.instagramUrl}
+              onChange={(e) => setContactSettings({ ...contactSettings, instagramUrl: e.target.value })}
+              placeholder="https://instagram.com/lucentrez"
+              type="url"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              required
+            />
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <button
+              type="submit"
+              className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background"
+            >
+              {text.updateContactSettings}
+            </button>
+          </div>
+        </form>
       </div>
 
       {toast ? (

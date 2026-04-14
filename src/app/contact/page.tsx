@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ContactForm } from "@/components/ContactForm";
+import { getContactSettings } from "@/lib/data";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default async function ContactPage() {
   const cookieStore = await cookies();
   const lang = normalizeLang(cookieStore.get(LANG_COOKIE)?.value);
+  const settings = await getContactSettings();
 
   return (
     <main className="w-full px-4 py-10 md:px-6 lg:px-10">
@@ -18,7 +20,10 @@ export default async function ContactPage() {
         {lang === "id" ? "Kontak" : "Contact"}
       </h1>
 
-      <ContactForm />
+      <ContactForm
+        whatsappNumber={settings.whatsappNumber}
+        instagramUrl={settings.instagramUrl}
+      />
     </main>
   );
 }

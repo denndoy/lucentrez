@@ -148,4 +148,38 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
   }
 }
 
+export type ContactSettings = {
+  whatsappNumber: string;
+  instagramUrl: string;
+};
+
+export async function getContactSettings(): Promise<ContactSettings> {
+  noStore();
+  try {
+    const { data, error } = await supabase
+      .from("contact_settings")
+      .select("*")
+      .eq("id", 1)
+      .single();
+
+    if (error) throw error;
+    if (!data) {
+      return {
+        whatsappNumber: "6281234567890",
+        instagramUrl: "https://instagram.com",
+      };
+    }
+
+    return {
+      whatsappNumber: data.whatsapp_number,
+      instagramUrl: data.instagram_url,
+    };
+  } catch {
+    return {
+      whatsappNumber: "6281234567890",
+      instagramUrl: "https://instagram.com",
+    };
+  }
+}
+
 export { formatRupiah };

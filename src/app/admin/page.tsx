@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { AdminPanel } from "@/components/AdminPanel";
 import { isAdminSessionFromCookies } from "@/lib/auth";
-import { getAllProducts, getGalleryItems, getHeroSlides } from "@/lib/data";
+import { getAllProducts, getGalleryItems, getHeroSlides, getContactSettings } from "@/lib/data";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 
 export default async function AdminPage() {
@@ -14,10 +14,11 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [products, gallery, heroSlides] = await Promise.all([
+  const [products, gallery, heroSlides, contactSettings] = await Promise.all([
     getAllProducts(),
     getGalleryItems(),
     getHeroSlides(),
+    getContactSettings(),
   ]);
 
   return (
@@ -36,7 +37,7 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      <AdminPanel initialProducts={products} initialGallery={gallery} initialHeroSlides={heroSlides} lang={lang} />
+      <AdminPanel initialProducts={products} initialGallery={gallery} initialHeroSlides={heroSlides} initialContactSettings={contactSettings} lang={lang} />
     </main>
   );
 }

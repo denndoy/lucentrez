@@ -30,7 +30,7 @@ export function Footer({ lang }: FooterProps) {
         };
 
   return (
-    <footer className="font-[family-name:var(--font-oswald)] border-t border-white/10 bg-[#111111] text-white">
+    <footer className="border-t border-white/10 bg-[#111111] text-white">
       <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 lg:px-10">
         <div className="flex flex-col items-center gap-8 py-8 text-center">
           <div className="w-full max-w-5xl">
