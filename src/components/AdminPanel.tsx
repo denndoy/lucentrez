@@ -293,6 +293,16 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
     () => form.images.split("\n").map((item) => item.trim()).filter(Boolean),
     [form.images],
   );
+
+  function moveProductImage(fromIndex: number, toIndex: number) {
+    const newImages = [...productImages];
+    const [removed] = newImages.splice(fromIndex, 1);
+    newImages.splice(toIndex, 0, removed);
+    setForm((prev) => ({
+      ...prev,
+      images: newImages.join("\n"),
+    }));
+  }
   const productNameValid = form.name.trim().length >= 2;
   const productDescriptionValid = form.description.trim().length >= 10;
   const productPrice = Number(form.price);
@@ -733,19 +743,55 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
                 </div>
               ) : null}
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {productImages.map((url) => (
-                  <div key={url} className="flex items-center gap-2 rounded-lg border border-border bg-background p-2">
-                    <Image src={url} alt="Product" width={48} height={48} className="h-12 w-12 rounded-lg object-cover" />
-                    <div className="flex-1">
-                      <p className="truncate text-xs text-muted">{url}</p>
+                {productImages.map((url, index) => (
+                  <div key={url} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-2">
+                    <div className="flex items-center gap-2">
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
+                        <Image src={url} alt="Product" fill className="object-cover" sizes="64px" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] uppercase tracking-widest text-muted">
+                          {index === 0 ? (lang === "id" ? "Gambar Utama" : "Main Image") : `${lang === "id" ? "Gambar" : "Image"} ${index + 1}`}
+                        </p>
+                        <p className="truncate text-xs text-muted">{url.split("/").pop()}</p>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      className="rounded-full border border-border px-2 py-1 text-[10px] uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background"
-                      onClick={() => removeProductImage(url)}
-                    >
-                      {text.remove}
-                    </button>
+                    <div className="flex flex-wrap gap-1">
+                      {index > 0 && (
+                        <button
+                          type="button"
+                          className="rounded border border-border px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted hover:bg-foreground hover:text-background"
+                          onClick={() => moveProductImage(index, index - 1)}
+                        >
+                          {lang === "id" ? "Geser Kiri" : "Move Left"}
+                        </button>
+                      )}
+                      {index < productImages.length - 1 && (
+                        <button
+                          type="button"
+                          className="rounded border border-border px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted hover:bg-foreground hover:text-background"
+                          onClick={() => moveProductImage(index, index + 1)}
+                        >
+                          {lang === "id" ? "Geser Kanan" : "Move Right"}
+                        </button>
+                      )}
+                      {index > 0 && (
+                        <button
+                          type="button"
+                          className="rounded border border-border px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted hover:bg-foreground hover:text-background"
+                          onClick={() => moveProductImage(index, 0)}
+                        >
+                          {lang === "id" ? "Jadikan Utama" : "Set as Main"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="rounded border border-red-400/40 px-2 py-0.5 text-[10px] uppercase tracking-widest text-red-400 hover:bg-red-100"
+                        onClick={() => removeProductImage(url)}
+                      >
+                        {text.remove}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -756,6 +802,27 @@ export function AdminPanel({ initialProducts, initialGallery, initialHeroSlides,
                     : "No images yet. Upload at least one product photo."}
                 </p>
               ) : null}
+
+              {/* Gallery Preview */}
+              {productImages.length > 0 && (
+                <div className="mt-4 rounded-xl border border-border bg-black/5 p-3">
+                  <p className="mb-2 text-[10px] uppercase tracking-widest text-muted">
+                    {lang === "id" ? "Preview Gallery" : "Gallery Preview"}
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {productImages.map((url, index) => (
+                      <div
+                        key={url}
+                        className={`relative h-14 w-14 flex-shrink-0 overflow-hidden rounded border-2 ${
+                          index === 0 ? "border-white" : "border-transparent"
+                        }`}
+                      >
+                        <Image src={url} alt={`Preview ${index + 1}`} fill className="object-cover" sizes="56px" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">

@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { cookies } from "next/headers";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/Button";
+import { ProductImageGallery } from "@/components/ProductImageGallery";
 import { formatRupiah, getAllProducts, getProductBySlug } from "@/lib/data";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 
@@ -44,21 +44,11 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
     notFound();
   }
 
-  const mainImage = product.images[0] ?? "/products/placeholder.svg";
-
   return (
     <main className="w-full px-4 py-10 md:px-6 lg:px-10">
       <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-10">
         <section>
-          <div className="relative h-[420px] overflow-hidden bg-card sm:h-[520px] lg:h-[640px]">
-            <Image
-              src={mainImage}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 60vw"
-              className="object-cover object-center"
-            />
-          </div>
+          <ProductImageGallery images={product.images} productName={product.name} />
         </section>
 
         <section className="flex flex-col justify-start">
