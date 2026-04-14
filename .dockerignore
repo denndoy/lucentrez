@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Next.js
+.next
+out
+
+# Production build
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Git
+.git
+.gitignore
+
+# Misc
+.DS_Store
+*.pem
+coverage
+.vscode
+*.log
+
+# Test files
+test-supabase-connection.ts
+apply-rls-policies.ts
+check-rls-status.ts
+debug-rls.ts
+
+# Scripts
+scripts

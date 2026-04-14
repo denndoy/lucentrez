@@ -6,6 +6,7 @@ const supabaseHostname = supabaseUrl
   : undefined;
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     remotePatterns: [
       {
