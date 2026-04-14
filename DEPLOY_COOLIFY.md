@@ -88,6 +88,13 @@ Di Coolify Dashboard → Project → Service → **Environment Variables**, tamb
 - ADMIN_PASSWORD
 - ADMIN_SECRET
 
+**Important!**
+Pastikan environment variables ini di-set (Coolify otomatis menandai NEXT_PUBLIC_ sebagai build-time):
+- NEXT_PUBLIC_SUPABASE_URL (diperlukan saat build)
+- NEXT_PUBLIC_SUPABASE_ANON_KEY (diperlukan saat build)
+- SUPABASE_SERVICE_ROLE_KEY (diperlukan saat build untuk API routes admin)
+- NEXT_PUBLIC_SITE_URL (diperlukan saat build)
+
 ### 4. Configure Domain
 
 1. Pada tab **Domain**:
