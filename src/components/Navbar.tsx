@@ -63,9 +63,14 @@ export function Navbar({ initialLang }: NavbarProps) {
               height={32}
               className="h-8 w-8"
             />
-            <span className="font-display text-2xl tracking-[0.18em] text-foreground">
-              LUCENTREZ
-            </span>
+            <Image
+              src="/lucentrez-letter.png"
+              alt="Lucentrez"
+              width={110}
+              height={26}
+              className="h-6 w-auto"
+              priority
+            />
           </Link>
 
           <div className="relative flex items-center gap-2">
@@ -119,7 +124,7 @@ export function Navbar({ initialLang }: NavbarProps) {
         </div>
 
         <div className="hidden px-2 md:grid md:grid-cols-3 md:items-center md:gap-4">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <Image
               src="/logo_lucentrez_v2.webp"
               alt="Lucentrez Logo"
@@ -127,10 +132,15 @@ export function Navbar({ initialLang }: NavbarProps) {
               height={48}
               className="h-12 w-12"
             />
-            <Link href="/" className="font-display text-5xl tracking-[0.08em] text-foreground">
-              LUCENTREZ
-            </Link>
-          </div>
+            <Image
+              src="/lucentrez-letter.png"
+              alt="Lucentrez"
+              width={170}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
+          </Link>
 
           <ul className="flex items-center justify-center gap-5">
             {links.map((link) => (
