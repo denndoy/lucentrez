@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
+import { invalidateHeroSlidesCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type Params = {
@@ -52,6 +53,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ message: "Failed to update hero slide", error: error.message }, { status: 500 });
   }
 
+  await invalidateHeroSlidesCache();
+
   return NextResponse.json({
     slide: {
       id: slide.id,
@@ -78,6 +81,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   if (error) {
     return NextResponse.json({ message: "Failed to delete hero slide", error: error.message }, { status: 500 });
   }
+
+  await invalidateHeroSlidesCache();
 
   return NextResponse.json({ ok: true });
 }

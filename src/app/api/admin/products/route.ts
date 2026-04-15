@@ -2,6 +2,7 @@ import slugify from "slugify";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
+import { invalidateProductsCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const productSchema = z.object({
@@ -79,6 +80,8 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ message: "Failed to create product", error: error.message }, { status: 500 });
   }
+
+  await invalidateProductsCache();
 
   return NextResponse.json({ product }, { status: 201 });
 }

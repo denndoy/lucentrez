@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
+import { invalidateProductsCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const productSchema = z.object({
@@ -60,6 +61,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ message: "Failed to update product", error: error.message }, { status: 500 });
   }
 
+  await invalidateProductsCache();
+
   return NextResponse.json({ product });
 }
 
@@ -79,6 +82,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   if (error) {
     return NextResponse.json({ message: "Failed to delete product", error: error.message }, { status: 500 });
   }
+
+  await invalidateProductsCache();
 
   return NextResponse.json({ ok: true });
 }

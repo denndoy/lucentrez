@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
+import { invalidateContactSettingsCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const contactSettingsSchema = z.object({
@@ -56,6 +57,8 @@ export async function PUT(request: NextRequest) {
   if (error) {
     return NextResponse.json({ message: "Failed to update contact settings", error: error.message }, { status: 500 });
   }
+
+  await invalidateContactSettingsCache();
 
   return NextResponse.json({ ok: true });
 }

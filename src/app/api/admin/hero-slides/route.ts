@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth";
+import { invalidateHeroSlidesCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const heroSlideSchema = z.object({
@@ -64,6 +65,8 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ message: "Failed to create hero slide", error: error.message }, { status: 500 });
   }
+
+  await invalidateHeroSlidesCache();
 
   return NextResponse.json(
     {
