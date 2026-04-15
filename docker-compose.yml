@@ -13,13 +13,11 @@ services:
       - .env
     depends_on:
       - redis
-    environment:
-      REDIS_URL: redis://default:YOUR_PASSWORD@redis:6379
     restart: unless-stopped
 
   redis:
     image: redis:7.2-alpine
-    command: redis-server --requirepass YOUR_PASSWORD
+    command: redis-server --requirepass WShMXcggDS54pWznFfHadk1uFYQomyi0dbty8xvfUckNF8Wkr2QRFu2oGBwiMdkx
     volumes:
       - redis-data:/data
     restart: unless-stopped
