@@ -11,4 +11,18 @@ services:
       - "6969:6969"
     env_file:
       - .env
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis://default:YOUR_PASSWORD@redis:6379
     restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    command: redis-server --requirepass YOUR_PASSWORD
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:
