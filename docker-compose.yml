@@ -17,7 +17,7 @@ services:
 
   redis:
     image: redis:7.2-alpine
-    command: redis-server --requirepass WShMXcggDS54pWznFfHadk1uFYQomyi0dbty8xvfUckNF8Wkr2QRFu2oGBwiMdkx
+    command: redis-server --requirepass 9phjbBYIKcvlU1lj3AOslVQCtRhQL3hRI3Ia68YQE2/O8dTa7lv8zyxNq4k+sggBiWI7TCJ6fz5a3bJqpuAV6Q==
     volumes:
       - redis-data:/data
     restart: unless-stopped
