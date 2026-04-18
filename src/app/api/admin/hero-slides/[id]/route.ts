@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAdminRequest } from "@/lib/auth";
+import { logBackendError, parseJsonBody, requireAdminAccess } from "@/lib/api";
 import { invalidateHeroSlidesCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -23,8 +23,9 @@ function buildAutoTitle(imageUrl: string, prefix: string) {
 const idSchema = z.string().uuid();
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request);
+  if (authError) {
+    return authError;
   }
 
   const { id } = await params;
@@ -32,7 +33,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (!parsedId.success) {
     return NextResponse.json({ message: "Invalid hero slide id" }, { status: 400 });
   }
-  const json = await request.json();
+  const json = await parseJsonBody<unknown>(request);
+  if (!json) {
+    return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+  }
+
   const parsed = heroSlideSchema.safeParse(json);
 
   if (!parsed.success) {
@@ -50,6 +55,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     .single();
 
   if (error) {
+    logBackendError("admin.hero-slides.update", error, { slideId: parsedId.data });
     return NextResponse.json({ message: "Failed to update hero slide", error: error.message }, { status: 500 });
   }
 
@@ -66,8 +72,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request);
+  if (authError) {
+    return authError;
   }
 
   const { id } = await params;
@@ -79,6 +86,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   const { error } = await supabaseAdmin.from("hero_slides").delete().eq("id", parsedId.data);
 
   if (error) {
+    logBackendError("admin.hero-slides.delete", error, { slideId: parsedId.data });
     return NextResponse.json({ message: "Failed to delete hero slide", error: error.message }, { status: 500 });
   }
 

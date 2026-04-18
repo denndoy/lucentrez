@@ -1,7 +1,7 @@
 import slugify from "slugify";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAdminRequest } from "@/lib/auth";
+import { logBackendError, parseJsonBody, requireAdminAccess } from "@/lib/api";
 import { invalidateProductsCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -17,8 +17,9 @@ const productSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request, { enforceOrigin: false });
+  if (authError) {
+    return authError;
   }
 
   const { data: products, error } = await supabaseAdmin
@@ -42,11 +43,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request);
+  if (authError) {
+    return authError;
   }
 
-  const json = await request.json();
+  const json = await parseJsonBody<Record<string, unknown>>(request);
+  if (!json) {
+    return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+  }
+
   const parsed = productSchema.safeParse({
     ...json,
     price: Number(json.price),
@@ -78,6 +84,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
+    logBackendError("admin.products.create", error, { slug });
     return NextResponse.json({ message: "Failed to create product", error: error.message }, { status: 500 });
   }
 

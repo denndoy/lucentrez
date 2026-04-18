@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAdminRequest } from "@/lib/auth";
+import { logBackendError, parseJsonBody, requireAdminAccess } from "@/lib/api";
 import { invalidateContactSettingsCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -10,8 +10,9 @@ const contactSettingsSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request, { enforceOrigin: false });
+  if (authError) {
+    return authError;
   }
 
   const { data, error } = await supabaseAdmin
@@ -34,11 +35,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request);
+  if (authError) {
+    return authError;
   }
 
-  const json = await request.json();
+  const json = await parseJsonBody<unknown>(request);
+  if (!json) {
+    return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+  }
+
   const parsed = contactSettingsSchema.safeParse(json);
 
   if (!parsed.success) {
@@ -55,6 +61,7 @@ export async function PUT(request: NextRequest) {
     }, { onConflict: "id" });
 
   if (error) {
+    logBackendError("admin.contact-settings.update", error);
     return NextResponse.json({ message: "Failed to update contact settings", error: error.message }, { status: 500 });
   }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { z } from "zod";
-import { isAdminRequest } from "@/lib/auth";
+import { logBackendError, parseJsonBody, requireAdminAccess } from "@/lib/api";
 import { invalidateHeroSlidesCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -19,8 +19,9 @@ function buildAutoTitle(imageUrl: string, prefix: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request, { enforceOrigin: false });
+  if (authError) {
+    return authError;
   }
 
   const { data: slides, error } = await supabaseAdmin
@@ -43,11 +44,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request);
+  if (authError) {
+    return authError;
   }
 
-  const json = await request.json();
+  const json = await parseJsonBody<unknown>(request);
+  if (!json) {
+    return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+  }
+
   const parsed = heroSlideSchema.safeParse(json);
 
   if (!parsed.success) {
@@ -63,6 +69,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
+    logBackendError("admin.hero-slides.create", error, { title });
     return NextResponse.json({ message: "Failed to create hero slide", error: error.message }, { status: 500 });
   }
 

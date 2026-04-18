@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAdminRequest } from "@/lib/auth";
+import { logBackendError, parseJsonBody, requireAdminAccess } from "@/lib/api";
 import { invalidateProductsCache } from "@/lib/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -22,8 +22,9 @@ type Params = {
 };
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request);
+  if (authError) {
+    return authError;
   }
 
   const { id } = await params;
@@ -31,7 +32,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (!parsedId.success) {
     return NextResponse.json({ message: "Invalid product id" }, { status: 400 });
   }
-  const json = await request.json();
+  const json = await parseJsonBody<Record<string, unknown>>(request);
+  if (!json) {
+    return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+  }
+
   const parsed = productSchema.safeParse({
     ...json,
     price: Number(json.price),
@@ -58,6 +63,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     .single();
 
   if (error) {
+    logBackendError("admin.products.update", error, { productId: parsedId.data });
     return NextResponse.json({ message: "Failed to update product", error: error.message }, { status: 500 });
   }
 
@@ -67,8 +73,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const authError = requireAdminAccess(request);
+  if (authError) {
+    return authError;
   }
 
   const { id } = await params;
@@ -80,6 +87,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   const { error } = await supabaseAdmin.from("products").delete().eq("id", parsedId.data);
 
   if (error) {
+    logBackendError("admin.products.delete", error, { productId: parsedId.data });
     return NextResponse.json({ message: "Failed to delete product", error: error.message }, { status: 500 });
   }
 

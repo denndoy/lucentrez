@@ -4,18 +4,54 @@ import { NextRequest } from "next/server";
 
 const COOKIE_NAME = "lucentrezn_admin";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8;
+const SESSION_VERSION = "v1";
 
 function getSecret(): string {
-  return process.env.ADMIN_SECRET ?? "lucentrezn-dev-secret";
+  const secret = process.env.ADMIN_SECRET?.trim();
+
+  if (!secret || secret.length < 32) {
+    throw new Error("Missing or weak ADMIN_SECRET. Set a random secret with at least 32 characters.");
+  }
+
+  return secret;
+}
+
+function getAdminUsername(): string {
+  const username = process.env.ADMIN_USERNAME?.trim();
+
+  if (!username) {
+    throw new Error("Missing ADMIN_USERNAME environment variable.");
+  }
+
+  return username;
+}
+
+function getAdminPassword(): string {
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!password || password.length < 12) {
+    throw new Error("Missing or weak ADMIN_PASSWORD. Use at least 12 characters.");
+  }
+
+  return password;
 }
 
 function sign(payload: string): string {
   return crypto.createHmac("sha256", getSecret()).update(payload).digest("hex");
 }
 
+function safeEqualHex(left: string, right: string): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(Buffer.from(left, "hex"), Buffer.from(right, "hex"));
+}
+
 export function createSession(username: string): string {
   const issuedAt = Date.now().toString();
-  const payload = `${username}.${issuedAt}`;
+  const nonce = crypto.randomBytes(16).toString("hex");
+  const payload = `${SESSION_VERSION}.${username}.${issuedAt}.${nonce}`;
   const signature = sign(payload);
   return `${payload}.${signature}`;
 }
@@ -25,13 +61,17 @@ export function verifySession(token?: string | null): boolean {
     return false;
   }
 
-  const [username, issuedAtRaw, signature] = token.split(".");
-  if (!username || !issuedAtRaw || !signature) {
+  const [version, username, issuedAtRaw, nonce, signature] = token.split(".");
+  if (!version || !username || !issuedAtRaw || !nonce || !signature) {
     return false;
   }
 
-  const expected = sign(`${username}.${issuedAtRaw}`);
-  if (expected !== signature) {
+  if (version !== SESSION_VERSION) {
+    return false;
+  }
+
+  const expected = sign(`${version}.${username}.${issuedAtRaw}.${nonce}`);
+  if (!safeEqualHex(expected, signature)) {
     return false;
   }
 
@@ -57,7 +97,5 @@ export function getAdminCookieName(): string {
 }
 
 export function validateAdminCredentials(username: string, password: string): boolean {
-  const expectedUser = process.env.ADMIN_USERNAME ?? "admin";
-  const expectedPassword = process.env.ADMIN_PASSWORD ?? "lucentrezn123";
-  return username === expectedUser && password === expectedPassword;
+  return username === getAdminUsername() && password === getAdminPassword();
 }

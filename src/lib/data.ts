@@ -5,6 +5,11 @@ import { fallbackGallery } from "@/lib/mock-data";
 import { formatRupiah } from "@/lib/format";
 import { GalleryItem, HeroSlide, ProductView } from "@/lib/types";
 
+function logDataError(scope: string, error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[data] ${scope}`, { message });
+}
+
 function normalizeGalleryImageUrl(imageUrl: unknown, title: unknown, index: number): string {
   const fallbackByTitle = new Map(
     fallbackGallery.map((item) => [item.title.toLowerCase(), item.imageUrl]),
@@ -140,7 +145,8 @@ export async function getAllProducts(): Promise<ProductView[]> {
 
     await setCacheJson(cacheKeys.products.all, products, CACHE_TTL.products);
     return products.map(toProductView);
-  } catch {
+  } catch (error) {
+    logDataError("getAllProducts", error);
     return [];
   }
 }
@@ -173,7 +179,8 @@ export async function getProductBySlug(slug: string): Promise<ProductView | null
 
     await setCacheJson(cacheKey, product, CACHE_TTL.productBySlug);
     return toProductView(product);
-  } catch {
+  } catch (error) {
+    logDataError("getProductBySlug", error);
     return null;
   }
 }
@@ -199,7 +206,8 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
 
     await setCacheJson(cacheKeys.gallery.all, gallery, CACHE_TTL.gallery);
     return gallery.map((item, index) => toGalleryItem(item, index));
-  } catch {
+  } catch (error) {
+    logDataError("getGalleryItems", error);
     return [];
   }
 }
@@ -225,7 +233,8 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
 
     await setCacheJson(cacheKeys.heroSlides.all, slides, CACHE_TTL.heroSlides);
     return slides.map(toHeroSlide);
-  } catch {
+  } catch (error) {
+    logDataError("getHeroSlides", error);
     return [];
   }
 }
@@ -252,7 +261,8 @@ export async function getContactSettings(): Promise<ContactSettings> {
 
     await setCacheJson(cacheKeys.contactSettings.current, data, CACHE_TTL.contactSettings);
     return toContactSettings(data);
-  } catch {
+  } catch (error) {
+    logDataError("getContactSettings", error);
     return defaultContactSettings;
   }
 }
