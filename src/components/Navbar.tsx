@@ -15,7 +15,6 @@ export function Navbar({ initialLang }: NavbarProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<AppLang>(initialLang);
-  const [langOpen, setLangOpen] = useState(false);
 
   useEffect(() => {
     setLang(initialLang);
@@ -37,9 +36,9 @@ export function Navbar({ initialLang }: NavbarProps) {
     [lang],
   );
 
-  async function selectLanguage(nextLang: AppLang) {
+  async function toggleLanguage() {
+    const nextLang = lang === "id" ? "en" : "id";
     setLang(nextLang);
-    setLangOpen(false);
 
     await fetch("/api/lang", {
       method: "POST",
@@ -73,45 +72,19 @@ export function Navbar({ initialLang }: NavbarProps) {
             />
           </Link>
 
-          <div className="relative flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              className="inline-flex items-center rounded-lg border border-border px-2.5 py-2 text-foreground"
-              onClick={() => setLangOpen((prev) => !prev)}
-              aria-label="Open language menu"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-foreground transition-colors hover:bg-muted/40"
+              onClick={toggleLanguage}
+              aria-label={lang === "id" ? "Ganti bahasa ke Inggris" : "Switch language to Indonesian"}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 2a10 10 0 100 20 10 10 0 000-20z" stroke="currentColor" strokeWidth="1.8"/>
                 <path d="M2 12h20M12 2c2.5 2.7 3.8 6.1 3.8 10S14.5 19.3 12 22M12 2C9.5 4.7 8.2 8.1 8.2 12s1.3 7.3 3.8 10" stroke="currentColor" strokeWidth="1.6"/>
               </svg>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground">{lang.toUpperCase()}</span>
             </button>
-
-            <AnimatePresence>
-              {langOpen ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.16, ease: "easeOut" }}
-                  className="absolute right-0 top-11 z-50 w-36 rounded-xl border border-border bg-card p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)]"
-                >
-                  <button
-                    type="button"
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "id" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => selectLanguage("id")}
-                  >
-                    Indonesia
-                  </button>
-                  <button
-                    type="button"
-                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "en" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => selectLanguage("en")}
-                  >
-                    English
-                  </button>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
 
             <button
               className="rounded-lg border border-border px-3 py-2 text-xs uppercase tracking-widest text-foreground"
@@ -155,45 +128,19 @@ export function Navbar({ initialLang }: NavbarProps) {
             ))}
           </ul>
 
-          <div className="relative flex justify-end">
+          <div className="flex justify-end">
             <button
               type="button"
-              className="inline-flex items-center rounded-full border border-border p-2 text-foreground transition-colors hover:bg-foreground hover:text-background"
-              onClick={() => setLangOpen((prev) => !prev)}
-              aria-label="Open language menu"
+              className="inline-flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 text-foreground transition-colors hover:bg-muted/40"
+              onClick={toggleLanguage}
+              aria-label={lang === "id" ? "Ganti bahasa ke Inggris" : "Switch language to Indonesian"}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 2a10 10 0 100 20 10 10 0 000-20z" stroke="currentColor" strokeWidth="1.8"/>
                 <path d="M2 12h20M12 2c2.5 2.7 3.8 6.1 3.8 10S14.5 19.3 12 22M12 2C9.5 4.7 8.2 8.1 8.2 12s1.3 7.3 3.8 10" stroke="currentColor" strokeWidth="1.6"/>
               </svg>
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">{lang.toUpperCase()}</span>
             </button>
-
-            <AnimatePresence>
-              {langOpen ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.16, ease: "easeOut" }}
-                  className="absolute right-0 top-11 z-50 w-40 rounded-xl border border-border bg-card p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)]"
-                >
-                  <button
-                    type="button"
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "id" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => selectLanguage("id")}
-                  >
-                    Indonesia
-                  </button>
-                  <button
-                    type="button"
-                    className={`mt-1 block w-full rounded-lg px-3 py-2 text-left text-xs uppercase tracking-[0.14em] ${lang === "en" ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}
-                    onClick={() => selectLanguage("en")}
-                  >
-                    English
-                  </button>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
           </div>
         </div>
       </nav>
