@@ -1,5 +1,3 @@
-# Development Docker Compose (optional, for local testing)
-# Note: For Coolify deployment, environment variables are configured in Coolify Dashboard
 version: '3.8'
 
 services:
@@ -8,21 +6,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:6969:6969"
+      - '127.0.0.1:6969:6969'
     env_file:
       - .env
-    depends_on:
-      - redis
+    networks:
+      - lucentrez-network
     restart: unless-stopped
 
-  redis:
-    image: redis:7.2-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-
-volumes:
-  redis-data:
+networks:
+  lucentrez-network:
+    external: true
